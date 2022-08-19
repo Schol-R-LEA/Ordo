@@ -1,0 +1,3 @@
+[submodule "Verbum"]
+	path = Verbum
+	url = git@github.com:Schol-R-LEA/Verbum.git
