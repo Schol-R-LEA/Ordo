@@ -9,6 +9,8 @@
 *.log
 *.xml
 *.bin
+*.o
+*.elf
 *.img
 *.qcow2
 *.zip
@@ -17,3 +19,4 @@
 .clj-kondo/.cache/v1/lock
 .clj-kondo
 .lsp
+obj/*
