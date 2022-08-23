@@ -17,6 +17,7 @@ C_INCLUDES=-I $(C_SRC)
 OBJPATH=obj
 KERNEL=kernel
 KSTART=kstart
+TERMINAL=terminal
 
 install: boot stage2 link
 	$(COPY) if=/dev/zero of=$(OBJPATH)/$(DISKTARGET) count=$(DISKSIZE) bs=1k
@@ -30,11 +31,14 @@ install: boot stage2 link
 	rmdir temp
 	$(REIMAGE) convert -f raw -O qcow2 $(OBJPATH)/$(DISKTARGET) ordo.qcow2
 
-link: kernel kstart
-	$(LD) -T $(LINK_SCRIPT) $(OBJPATH)/$(KERNEL).o -o $(OBJPATH)/$(KERNEL).elf
+link: kstart kernel terminal
+	$(LD) -T $(LINK_SCRIPT) $(OBJPATH)/$(KERNEL).o $(OBJPATH)/$(TERMINAL).o -o $(OBJPATH)/$(KERNEL).elf
 
-kernel:
+kernel: terminal
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(KERNEL).c -o $(OBJPATH)/$(KERNEL).o
+
+terminal:
+	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(TERMINAL).c -o $(OBJPATH)/$(TERMINAL).o
 
 kstart:
 	$(ASM) -f elf32 $(C_SRC)/$(KSTART).asm -o $(OBJPATH)/$(KSTART).o -l $(OBJPATH)/$(KSTART).lst
