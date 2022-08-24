@@ -4,7 +4,7 @@
 
 volatile const struct TextCell* text_buffer = (struct TextCell *)0xB8000;
 
-const uint16_t MAXH = 80, MAXV = 25;
+const uint16_t MAXH = 80, MAXV = 25, MAX_TEXT = 80 * 25;
 uint16_t currv = 0, currh = 0;
 struct TextCell* text_cursor = (struct TextCell *)0xB8000;
 
@@ -51,7 +51,7 @@ void kprint(const char *string, uint8_t attribs)
 
 void clear_screen()
 {
-    for(int i = 0; i < (MAXH * MAXV); i++) {
+    for(int i = 0; i < MAX_TEXT; i++) {
         kprintc(' ', 0);
     }
 }

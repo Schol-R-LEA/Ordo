@@ -4,6 +4,6 @@
 
 void kernel_main()
 {
-    // clear_screen();
-    // kprint("Starting Kernel...", 0x07);
+    clear_screen();
+    kprint("Starting Kernel...", 0x07);
 }
