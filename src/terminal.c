@@ -57,6 +57,45 @@ void kprints(const char *string, uint8_t fg_color, uint8_t bg_color, uint8_t ch_
     }
 }
 
+
+void kprintu(const uint32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
+{
+    uint32_t dividend = i / base, rem = i % base;
+    char value;
+
+    if (dividend != 0)
+    {
+        kprintu(dividend, base, fg_color, bg_color, ch_attrib);
+    }
+
+    if (rem > 9)
+    {
+        value = (char)(rem - 10 + (uint32_t)'A');
+    }
+    else
+    {
+        value = (char)(rem + (uint32_t)'0');
+    }
+    kprintc(value, fg_color, bg_color, ch_attrib);
+}
+
+
+void kprinti(const int32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
+{
+    uint32_t value;
+    if (i < 0)
+    {
+        kprintc('-', fg_color, bg_color, ch_attrib);
+        value = (uint32_t) (~i + 1);
+    }
+    else
+    {
+        value = (uint32_t) i;
+    }
+    kprintu(value, base, fg_color, bg_color, ch_attrib);
+}
+
+
 void clear_screen()
 {
     struct TextCell *temp = (struct TextCell *)0xb8000;
