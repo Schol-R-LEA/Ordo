@@ -43,6 +43,8 @@ void advance_cursor();
 void gotoxy(uint16_t x, uint16_t y);
 void kprintc(char c, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib);
 void kprints(const char *string, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib);
+void kprintu(const uint32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib);
+void kprinti(const int32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib);
 void clear_screen();
 
 #endif
