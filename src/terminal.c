@@ -42,11 +42,22 @@ void gotoxy(uint16_t x, uint16_t y)
 
 void kprintc(char c, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
 {
-    text_cursor->ch = c;
-    text_cursor->attribute.fg_color  = fg_color;
-    text_cursor->attribute.bg_color  = bg_color;
-    text_cursor->attribute.ch_attrib = ch_attrib;
-    advance_cursor();
+    if (c == '\n')
+    {
+        gotoxy(0, currv + 1);
+    }
+    else if (c == '\t')
+    {
+        gotoxy(currh + 4, currv);
+    }
+    else
+    {
+        text_cursor->ch = c;
+        text_cursor->attribute.fg_color  = fg_color;
+        text_cursor->attribute.bg_color  = bg_color;
+        text_cursor->attribute.ch_attrib = ch_attrib;
+        advance_cursor();
+    }
 }
 
 void kprints(const char *string, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
