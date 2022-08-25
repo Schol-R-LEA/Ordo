@@ -2,25 +2,32 @@
 #include "terminal.h"
 
 
-volatile const struct TextCell* text_buffer = (struct TextCell *)0xB8000;
+#define BUFFER 0xB8000
 
-const uint16_t MAXH = 80, MAXV = 25, MAX_TEXT = 80 * 25;
+volatile const struct TextCell* text_buffer = (struct TextCell *)BUFFER;
+
+const uint16_t MAXH = 80, MAXV = 25, MAX_TEXT = MAXH * MAXV;
 uint16_t currv = 0, currh = 0;
-struct TextCell* text_cursor = (struct TextCell *)0xB8000;
+struct TextCell* text_cursor = (struct TextCell *)BUFFER;
 
 
 void advance_cursor()
 {
     text_cursor++;
-    if (currh < MAXH) {
+    if (currh < MAXH)
+    {
         currh++;
     }
-    else {
+    else
+    {
         currh = 0;
-        if (currv < MAXV) {
+        if (currv < MAXV)
+        {
             currv++;
         }
-        else {
+        else
+        {
+            currv = MAXV - 1;
             /* handle scrolling */
         }
     }
@@ -28,30 +35,40 @@ void advance_cursor()
 
 void gotoxy(uint16_t x, uint16_t y)
 {
-    struct TextCell* new_pos = (struct TextCell *)(0xB8000 + (MAXV * MAXH));
-    text_cursor = (struct TextCell *)((unsigned int) text_cursor + (unsigned int) new_pos);
+    text_cursor = (struct TextCell *)((BUFFER + (2 * (x + (MAXH * y)))));
     currh = x;
     currv = y;
 }
 
-void kprintc(char c, uint8_t attrib)
+void kprintc(char c, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
 {
     text_cursor->ch = c;
-    text_cursor->attribute = attrib;
+    text_cursor->attribute.fg_color  = fg_color;
+    text_cursor->attribute.bg_color  = bg_color;
+    text_cursor->attribute.ch_attrib = ch_attrib;
     advance_cursor();
 }
 
-void kprint(const char *string, uint8_t attribs)
+void kprints(const char *string, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
 {
-    int i;
-    for (i = 0; string[i] != '\0'; i++) {
-        kprintc(string[i], attribs);
+    for (char* i = (char *) string; *i != '\0'; i++)
+    {
+        kprintc(*i, fg_color, bg_color, ch_attrib);
     }
 }
 
 void clear_screen()
 {
-    for(int i = 0; i < MAX_TEXT; i++) {
-        kprintc(' ', 0);
+    struct TextCell *temp = (struct TextCell *)0xb8000;
+    for(int i = 0; i < MAX_TEXT; i++)
+    {
+        temp->ch = ' ';
+        text_cursor->attribute.fg_color  = GRAY;
+        text_cursor->attribute.bg_color  = BLACK;
+        text_cursor->attribute.ch_attrib = 0;
+        temp++;
     }
+    text_cursor = (struct TextCell *)0xb8000;
+    currh = 0;
+    currv = 0;
 }

@@ -5,5 +5,6 @@
 void kernel_main()
 {
     clear_screen();
-    kprint("Starting Kernel...", 0x07);
+    gotoxy(5, 1);
+    kprints("Starting Kernel...", GRAY, BLACK, 0);
 }
