@@ -12,6 +12,6 @@ struct memory_map_entry
 } __attribute__ ((packed));
 
 
-void print_mmap(uint32_t count, struct memory_map_entry* table);
+void print_mmap(uint32_t count, struct memory_map_entry table[]);
 
 #endif

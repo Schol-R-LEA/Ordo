@@ -2,9 +2,9 @@
 #include "mem_map.h"
 #include "terminal.h"
 
-#define MMAP_SPACER "     | "
+#define MMAP_SPACER "   | "
 
-char mmap_types[][16] =
+const char mmap_types[][17] =
 {"                ",
  "Free Memory     ",
  "Reserved Memory ",
@@ -14,13 +14,13 @@ char mmap_types[][16] =
 };
 
 
-void print_mmap(uint32_t count, struct memory_map_entry* table)
+void print_mmap(uint32_t count, struct memory_map_entry table[])
 {
     kprints("\n\nMemory map (", WHITE, BLACK, 0);
     kprintu(count, 16, WHITE, BLACK, 0);
     kprints(" entries):\n", WHITE, BLACK, 0);
 
-    kprints("Base Address       | Length             | Type                  | Ext.\n", WHITE, BLACK, 0);
+    kprints("Base Address       | Length             | Type                    | Ext.\n", WHITE, BLACK, 0);
     kprints("----------------------------------------------------------------------------\n", WHITE, BLACK, 0);
 
     struct memory_map_entry* entry = table;
@@ -36,5 +36,6 @@ void print_mmap(uint32_t count, struct memory_map_entry* table)
         kprints(") ", GRAY, BLACK, 0);
         kprints(MMAP_SPACER, WHITE, BLACK, 0);
         kprintu(entry->ext, 10, GRAY, BLACK, 0);
+        kprintc('\n', GRAY, BLACK, 0);
     }
 }
