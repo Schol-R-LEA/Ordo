@@ -14,7 +14,7 @@ char mmap_types[][16] =
 };
 
 
-void print_mmap(uint8_t count, struct memory_map_entry* table)
+void print_mmap(uint32_t count, struct memory_map_entry* table)
 {
     kprints("\n\nMemory map (", WHITE, BLACK, 0);
     kprintu(count, 16, WHITE, BLACK, 0);
