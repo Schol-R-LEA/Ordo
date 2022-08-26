@@ -69,14 +69,15 @@ void kprints(const char *string, uint8_t fg_color, uint8_t bg_color, uint8_t ch_
 }
 
 
-void kprintu(const uint32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
+uint8_t kprintu(const uint32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
 {
     uint32_t dividend = i / base, rem = i % base;
     char value;
+    uint8_t count = 1;
 
     if (dividend != 0)
     {
-        kprintu(dividend, base, fg_color, bg_color, ch_attrib);
+        count += kprintu(dividend, base, fg_color, bg_color, ch_attrib);
     }
 
     if (rem > 9)
@@ -88,10 +89,11 @@ void kprintu(const uint32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color,
         value = (char)(rem + (uint32_t)'0');
     }
     kprintc(value, fg_color, bg_color, ch_attrib);
+    return count;
 }
 
 
-void kprinti(const int32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
+uint8_t kprinti(const int32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
 {
     uint32_t value;
     if (i < 0)
@@ -103,9 +105,40 @@ void kprinti(const int32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, 
     {
         value = (uint32_t) i;
     }
-    kprintu(value, base, fg_color, bg_color, ch_attrib);
+    return kprintu(value, base, fg_color, bg_color, ch_attrib) + 1;
 }
 
+
+void kprintlx(const uint64_t i, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
+{
+    uint16_t save_h = currh, save_v = currv;
+    union
+    {
+        uint64_t total;
+        struct {
+        uint32_t lo, hi;
+        } sections;
+    } value;
+    uint8_t count;
+
+    value.total = i;
+    count = kprintu(value.sections.hi, 16, fg_color, bg_color, ch_attrib);
+    gotoxy(save_h, save_v);
+    for (int c = 8 - count; c > 0; c--)
+    {
+        kprintc('0', fg_color, bg_color, ch_attrib);
+    }
+    kprintu(value.sections.hi, 16, fg_color, bg_color, ch_attrib);
+    save_h = currh;
+
+    count = kprintu(value.sections.lo, 16, fg_color, bg_color, ch_attrib);
+    gotoxy(save_h, save_v);
+    for (int c = 8 - count; c > 0; c--)
+    {
+        kprintc('0', fg_color, bg_color, ch_attrib);
+    }
+    kprintu(value.sections.lo, 16, fg_color, bg_color, ch_attrib);
+}
 
 void clear_screen()
 {
