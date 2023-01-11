@@ -13,10 +13,11 @@ LD=i686-elf-ld
 LINK_SCRIPT=linker.ld
 CFLAGS=-Wall -Werror -Wpedantic -std=c11 -ffreestanding
 C_SRC=src
-C_INCLUDES=-I $(C_SRC)
+C_INCLUDES=-I $(C_SRC)/include
 OBJPATH=obj
 KERNEL=kernel
 KSTART=kstart
+IDT=idt
 TERMINAL=terminal
 MEM_MAP=mem_map
 
@@ -32,11 +33,14 @@ install: boot stage2 link
 	rmdir temp
 	$(REIMAGE) convert -f raw -O qcow2 $(OBJPATH)/$(DISKTARGET) ordo.qcow2
 
-link: kstart kernel terminal mem_map
-	$(LD) -T $(LINK_SCRIPT) $(OBJPATH)/$(KERNEL).o $(OBJPATH)/$(TERMINAL).o $(OBJPATH)/$(MEM_MAP).o -o $(OBJPATH)/$(KERNEL).elf
+link: kstart kernel terminal mem_map idt
+	$(LD) -T $(LINK_SCRIPT) $(OBJPATH)/$(KERNEL).o $(OBJPATH)/$(TERMINAL).o $(OBJPATH)/$(MEM_MAP).o $(OBJPATH)/$(IDT).o -o $(OBJPATH)/$(KERNEL).elf
 
 kernel: terminal
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(KERNEL).c -o $(OBJPATH)/$(KERNEL).o
+
+idt:
+	$(CC) $(CFLAGS) -mgeneral-regs-only $(C_INCLUDES) -c $(C_SRC)/$(IDT).c -o $(OBJPATH)/$(IDT).o
 
 mem_map:
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(MEM_MAP).c -o $(OBJPATH)/$(MEM_MAP).o

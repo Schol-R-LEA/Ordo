@@ -1,6 +1,6 @@
 #include <stdint.h>
-#include "include/mem_map.h"
-#include "include/terminal.h"
+#include "mem_map.h"
+#include "terminal.h"
 
 #define MMAP_SPACER "   | "
 

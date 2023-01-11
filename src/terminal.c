@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "include/terminal.h"
+#include "terminal.h"
 
 
 #define BUFFER 0xB8000

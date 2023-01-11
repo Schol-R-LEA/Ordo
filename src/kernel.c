@@ -1,7 +1,10 @@
 /* kernel.c */
 #include <stdint.h>
-#include "include/terminal.h"
-#include "include/mem_map.h"
+#include "kernel.h"
+#include "terminal.h"
+#include "mem_map.h"
+#include "idt.h"
+
 
 #define KDATA_OFFSET 0xc0010000
 
@@ -22,6 +25,11 @@ void kernel_main()
     struct kdata* fs_data = (struct kdata *) (KDATA_OFFSET - sizeof(struct kdata) - 16);
 
     print_mmap(fs_data->mmap_cnt, fs_data->mem_table);
+
+    init_default_interrupts();
+
+
+    enable_interrupts();
 }
 
 
