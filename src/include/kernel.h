@@ -7,4 +7,12 @@ enum PRIVILEGE_LEVEL
 };
 
 
+static inline void panic()
+{
+
+    __asm__ ("local_loop:\n"
+             "    hlt\n"
+             "    jmp local_loop");
+}
+
 #endif
