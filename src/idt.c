@@ -7,7 +7,9 @@
 
 __attribute__((aligned(0x10))) static struct Interrupt_Descriptor_32 idt[IDT_SIZE];
 
-
+// lookup table for exception descriptions
+// With thanks to Nicholas Kelly for the original at
+// https://github.com/krisvers/kros/blob/master/kernel/arch/x64/isr.c
 /* static const char * const Exception_Descriptions = {
     "Divide by zero",
     "Debug",
