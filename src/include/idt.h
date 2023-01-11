@@ -64,7 +64,7 @@ static inline void load_IDT(struct IDT_R* idtr)
 {
     __asm__ volatile("lidt %0"
             :   /* no output argument */
-            :"m"(idtr));
+            :"m"(*idtr));
 }
 
 
