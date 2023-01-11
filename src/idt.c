@@ -8,52 +8,81 @@ __attribute__((aligned(0x10))) static struct IDT_R idt_r;
 __attribute__((aligned(0x10))) static struct Interrupt_Descriptor_32 idt[IDT_SIZE];
 
 
-void idt_set_descriptor(uint8_t vector, void isr(struct Interrupt_Frame*), uint8_t dpl, enum IDT_gate_type gate_type) {
+void idt_set_descriptor(uint8_t vector, void isr(struct Interrupt_Frame*), enum PRIVILEGE_LEVEL dpl, enum IDT_gate_type gate_type)
+{
     struct Interrupt_Descriptor_32* descriptor = &idt[vector];
 
-    descriptor->offset_low       = (uint32_t)isr & 0xFFFF;
+    descriptor->offset_low       = (uint16_t) ((uint32_t) isr & 0xFFFF);
     descriptor->segment_selector = system_code_entry;
     descriptor->attributes.p     = 1;
     descriptor->attributes.dpl   = dpl;
     descriptor->attributes.zero  = 0;
-    descriptor->attributes.gate_type  = gate_type;
-    descriptor->offset_high      = (uint32_t)isr >> 16;
+    descriptor->attributes.gate_type = gate_type;
+    descriptor->offset_high      = (uint16_t) ((uint32_t) isr >> 16);
     descriptor->reserved         = 0;
 }
+
 
 
 __attribute__((interrupt)) void default_exception_handler(struct Interrupt_Frame* frame)
 {
     disable_interrupts();
+    clear_screen();
     kprints("Unhandled exception.", WHITE, BLACK, 0);
     __asm__("hlt");
 }
 
 
+__attribute__((interrupt)) void div_zero_exception_handler(struct Interrupt_Frame* frame)
+{
+    disable_interrupts();
+    clear_screen();
+    kprints("Exception 0x00: Divide by Zero", WHITE, BLACK, 0);
+    __asm__("hlt");
+}
+
+__attribute__((interrupt)) void double_fault_exception_handler(struct Interrupt_Frame* frame)
+{
+    disable_interrupts();
+    clear_screen();
+    kprints("Exception 0x08: Double Fault", WHITE, BLACK, 0);
+    __asm__("hlt");
+}
+
 
 __attribute__((interrupt)) void default_interrupt_handler(struct Interrupt_Frame* frame)
 {
-    disable_interrupts();
+    clear_screen();
     kprints("Unhandled interrupt.", WHITE, BLACK, 0);
-
     __asm__("hlt");
 }
 
 
 void init_default_interrupts()
 {
-    idt_r.base = (uint32_t) &idt;
-    idt_r.size = (uint16_t) (sizeof(struct Interrupt_Descriptor_32) * IDT_SIZE) - 1;
+    // initialize the values to put into the IDT register
+    idt_r.base = (uintptr_t) &idt[0];
+    idt_r.size = (uint16_t) sizeof(struct Interrupt_Descriptor_32) * IDT_SIZE - 1;
 
-    for (uint8_t vector = 0; vector < (IDT_SIZE - 1); vector++)
+    // As a precaution, populate the IDT with default ISRs.
+    // This is done in two phases, first populating the exception handlers,
+    // then populating the interrupt handlers.
+    for (uint8_t vector = 0; vector < (EXCEPTIONS_SIZE - 1); vector++)
     {
-        idt_set_descriptor(vector,
-                           (vector < EXCEPTIONS_SIZE
-                            ? default_exception_handler : default_interrupt_handler),
-                           RING_0,
-                           (vector < EXCEPTIONS_SIZE
-                            ? TRAP_GATE_32 : INT_GATE_32));
+        idt_set_descriptor(vector, default_exception_handler, RING_0, TRAP_GATE_32);
     }
+
+    for (uint8_t vector = EXCEPTIONS_SIZE; vector < (IDT_SIZE - 1); vector++)
+    {
+        idt_set_descriptor(vector, default_interrupt_handler, RING_0, INT_GATE_32);
+    }
+
+
+    // add exception-specific handlers
+    idt_set_descriptor(0x00, div_zero_exception_handler, RING_0, TRAP_GATE_32);
+    idt_set_descriptor(0x08, double_fault_exception_handler, RING_0, TRAP_GATE_32);
+
+    // add interrupt-specific handlers
 
     load_IDT(&idt_r);
 }

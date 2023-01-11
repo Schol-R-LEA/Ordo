@@ -8,7 +8,7 @@
 #define EXCEPTIONS_SIZE 32
 
 
-enum IDT_gate_type
+enum IDT_gate_type: uint8_t
 {
     TASK_GATE = 0x05,
     INT_GATE_16 = 0x06,
@@ -31,16 +31,13 @@ struct Interrupt_Descriptor_32
     uint8_t reserved;
     struct
     {
-        uint8_t p:1;
-        uint8_t dpl:2;
-        uint8_t zero:1;
         uint8_t gate_type:4;
+        uint8_t zero:1;
+        uint8_t dpl:2;
+        uint8_t p:1;
     } attributes;
     uint16_t offset_high;
 } __attribute__((packed));
-
-
-extern struct Interrupt_Descriptor_32 IDT[IDT_SIZE];
 
 
 struct Interrupt_Frame
