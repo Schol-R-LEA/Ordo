@@ -41,7 +41,7 @@ struct RSDP_Extended_Descriptor* scan_rsdp_signature()
 
     if(!found)
     {
-        kprints("Error: RSDP not found", WHITE, BLACK, 0);
+        kprints("Error: RSDP not found", WHITE, BLACK);
         panic();
     }
     return NULL;
@@ -62,19 +62,19 @@ bool validate_rsdp_checksum(struct RSDP_Extended_Descriptor *candidate)
 
     if ((checksum & 0x000000ff) != 0)
     {
-        kprints("First checksum failed!\n", GRAY, BLACK, 0);
+        kprints("First checksum failed!\n", GRAY, BLACK);
         return false;
     }
-    kprints("First checksum good... ", GRAY, BLACK, 0);
+    kprints("First checksum good... ", GRAY, BLACK);
 
     if (candidate->ver_1.Revision == 0)
     {
-        kprints("ACPI 1.0, no extended checksum.\n", GRAY, BLACK, 0);
+        kprints("ACPI 1.0, no extended checksum.\n", GRAY, BLACK);
         return true;
     }
     else if (candidate->ver_1.Revision != 2)
     {
-        kprints("Invalid revision, RSDP corrupted.\n", GRAY, BLACK, 0);
+        kprints("Invalid revision, RSDP corrupted.\n", GRAY, BLACK);
         return false;
     }
 
@@ -86,33 +86,33 @@ bool validate_rsdp_checksum(struct RSDP_Extended_Descriptor *candidate)
 
     if ((checksum & 0x000000ff) != 0)
     {
-        kprints("second checksum failed!\n", GRAY, BLACK, 0);
+        kprints("second checksum failed!\n", GRAY, BLACK);
         return false;
     }
 
-    kprints("second checksum good.\n", GRAY, BLACK, 0);
+    kprints("second checksum good.\n", GRAY, BLACK);
     return true;
 }
 
 
 void init_acpi()
 {
-    kprints("\nSeeking RSDP... ", GRAY, BLACK, 0);
+    kprints("\nSeeking RSDP... ", GRAY, BLACK);
 
     rsdp = scan_rsdp_signature();
-    kprints("RDSP candidate found\n", GRAY, BLACK, 0);
+    kprints("RDSP candidate found\n", GRAY, BLACK);
 
-    kprints("OEM ID: ", GRAY, BLACK, 0);
+    kprints("OEM ID: ", GRAY, BLACK);
     for (unsigned int i = 0; i < 6; i++)
     {
-        kprintc(rsdp->ver_1.OEM_ID[i], BLACK, WHITE, 0);
+        kprintc(rsdp->ver_1.OEM_ID[i], BLACK, WHITE);
     }
-    kprintc('\n', GRAY, BLACK, 0);
+    kprintc('\n', GRAY, BLACK);
 
 
     if (!validate_rsdp_checksum(rsdp))
     {
-        kprints("Error: invalid RDSP", WHITE, BLACK, 0);
+        kprints("Error: invalid RDSP", WHITE, BLACK);
         panic();
     }
 }

@@ -40,7 +40,7 @@ void gotoxy(uint16_t x, uint16_t y)
     currv = y;
 }
 
-void kprintc(char c, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
+void kprintc(char c, enum Color fg_color, enum Color bg_color)
 {
     if (c == '\n')
     {
@@ -55,21 +55,20 @@ void kprintc(char c, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
         text_cursor->ch = c;
         text_cursor->attribute.fg_color  = fg_color;
         text_cursor->attribute.bg_color  = bg_color;
-        text_cursor->attribute.ch_attrib = ch_attrib;
         advance_cursor();
     }
 }
 
-void kprints(const char *string, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
+void kprints(const char *string, enum Color fg_color, enum Color bg_color)
 {
     for (char* i = (char *) string; *i != '\0'; i++)
     {
-        kprintc(*i, fg_color, bg_color, ch_attrib);
+        kprintc(*i, fg_color, bg_color);
     }
 }
 
 
-uint8_t kprintu(const uint32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
+uint8_t kprintu(const uint32_t i, uint8_t base, enum Color fg_color, enum Color bg_color)
 {
     uint32_t dividend = i / base, rem = i % base;
     char value;
@@ -77,7 +76,7 @@ uint8_t kprintu(const uint32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_col
 
     if (dividend != 0)
     {
-        count += kprintu(dividend, base, fg_color, bg_color, ch_attrib);
+        count += kprintu(dividend, base, fg_color, bg_color);
     }
 
     if (rem > 9)
@@ -88,28 +87,28 @@ uint8_t kprintu(const uint32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_col
     {
         value = (char)(rem + (uint32_t)'0');
     }
-    kprintc(value, fg_color, bg_color, ch_attrib);
+    kprintc(value, fg_color, bg_color);
     return count;
 }
 
 
-uint8_t kprinti(const int32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
+uint8_t kprinti(const int32_t i, uint8_t base, enum Color fg_color, enum Color bg_color)
 {
     uint32_t value;
     if (i < 0)
     {
-        kprintc('-', fg_color, bg_color, ch_attrib);
+        kprintc('-', fg_color, bg_color);
         value = (uint32_t) (~i + 1);
     }
     else
     {
         value = (uint32_t) i;
     }
-    return kprintu(value, base, fg_color, bg_color, ch_attrib) + 1;
+    return kprintu(value, base, fg_color, bg_color) + 1;
 }
 
 
-void kprintlx(const uint64_t i, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib)
+void kprintlx(const uint64_t i, enum Color fg_color, enum Color bg_color)
 {
     uint16_t save_h = currh, save_v = currv;
     union
@@ -122,22 +121,22 @@ void kprintlx(const uint64_t i, uint8_t fg_color, uint8_t bg_color, uint8_t ch_a
     uint8_t count;
 
     value.total = i;
-    count = kprintu(value.sections.hi, 16, fg_color, bg_color, ch_attrib);
+    count = kprintu(value.sections.hi, 16, fg_color, bg_color);
     gotoxy(save_h, save_v);
     for (int c = 8 - count; c > 0; c--)
     {
-        kprintc('0', fg_color, bg_color, ch_attrib);
+        kprintc('0', fg_color, bg_color);
     }
-    kprintu(value.sections.hi, 16, fg_color, bg_color, ch_attrib);
+    kprintu(value.sections.hi, 16, fg_color, bg_color);
     save_h = currh;
 
-    count = kprintu(value.sections.lo, 16, fg_color, bg_color, ch_attrib);
+    count = kprintu(value.sections.lo, 16, fg_color, bg_color);
     gotoxy(save_h, save_v);
     for (int c = 8 - count; c > 0; c--)
     {
-        kprintc('0', fg_color, bg_color, ch_attrib);
+        kprintc('0', fg_color, bg_color);
     }
-    kprintu(value.sections.lo, 16, fg_color, bg_color, ch_attrib);
+    kprintu(value.sections.lo, 16, fg_color, bg_color);
 }
 
 void clear_screen()
@@ -148,7 +147,6 @@ void clear_screen()
         temp->ch = ' ';
         text_cursor->attribute.fg_color  = GRAY;
         text_cursor->attribute.bg_color  = BLACK;
-        text_cursor->attribute.ch_attrib = 0;
         temp++;
     }
     text_cursor = (struct TextCell *)0xb8000;

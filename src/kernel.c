@@ -21,7 +21,7 @@ struct kdata
 void kernel_main()
 {
     clear_screen();
-    kprints("Starting Kernel...\n", CYAN, BLACK, 0);
+    kprints("Starting Kernel...\n", CYAN, BLACK);
 
     struct kdata* fs_data = (struct kdata *) (KDATA_OFFSET - sizeof(struct kdata) - 16);
 
@@ -33,7 +33,7 @@ void kernel_main()
 
     //enable_interrupts();
 
-    kprints("End of kernel services", BLACK, CYAN, 0);
+    kprints("End of kernel services", BLACK, CYAN);
     panic();
 }
 

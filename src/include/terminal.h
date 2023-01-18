@@ -4,7 +4,7 @@
 
 
 
-enum Color
+enum Color: uint8_t
 {
     BLACK,
     BLUE,
@@ -29,10 +29,8 @@ struct TextCell {
     volatile unsigned char ch;
     volatile struct
     {
-        uint8_t fg_color:4,
-                bg_color:3,
-                ch_attrib:1;
-
+        enum Color fg_color:4;
+        enum Color bg_color:4;
     } attribute;
 };
 
@@ -41,11 +39,11 @@ extern volatile const struct TextCell* text_buffer;
 
 void advance_cursor();
 void gotoxy(uint16_t x, uint16_t y);
-void kprintc(char c, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib);
-void kprints(const char *string, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib);
-uint8_t kprintu(const uint32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib);
-uint8_t kprinti(const int32_t i, uint8_t base, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib);
-void kprintlx(const uint64_t i, uint8_t fg_color, uint8_t bg_color, uint8_t ch_attrib);
+void kprintc(char c, enum Color fg_color, enum Color bg_color);
+void kprints(const char *string, enum Color fg_color, enum Color bg_color);
+uint8_t kprintu(const uint32_t i, uint8_t base, enum Color fg_color, enum Color bg_color);
+uint8_t kprinti(const int32_t i, uint8_t base, enum Color fg_color, enum Color bg_color);
+void kprintlx(const uint64_t i, enum Color fg_color, enum Color bg_color);
 void clear_screen();
 
 #endif
