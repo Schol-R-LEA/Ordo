@@ -39,11 +39,14 @@ extern volatile const struct TextCell* text_buffer;
 
 void advance_cursor();
 void gotoxy(uint16_t x, uint16_t y);
+void set_fg(enum Color new_fg);
+void set_bg(enum Color new_bg);
 void kprintc(char c, enum Color fg_color, enum Color bg_color);
 void kprints(const char *string, enum Color fg_color, enum Color bg_color);
 uint8_t kprintu(const uint32_t i, uint8_t base, enum Color fg_color, enum Color bg_color);
 uint8_t kprinti(const int32_t i, uint8_t base, enum Color fg_color, enum Color bg_color);
 void kprintlx(const uint64_t i, enum Color fg_color, enum Color bg_color);
+void kprintf(const char* format, ...);
 void clear_screen();
 
 #endif

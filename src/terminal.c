@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdarg.h>
 #include "terminal.h"
 
 
@@ -9,6 +10,9 @@ volatile const struct TextCell* text_buffer = (struct TextCell *)BUFFER;
 const uint16_t MAXH = 80, MAXV = 25, MAX_TEXT = MAXH * MAXV;
 uint16_t currv = 0, currh = 0;
 struct TextCell* text_cursor = (struct TextCell *)BUFFER;
+
+enum Color current_default_foreground = GRAY;
+enum Color current_default_background = BLACK;
 
 
 void advance_cursor()
@@ -39,6 +43,17 @@ void gotoxy(uint16_t x, uint16_t y)
     currh = x;
     currv = y;
 }
+
+void set_fg(enum Color new_fg)
+{
+    current_default_foreground = new_fg;
+}
+
+void set_bg(enum Color new_bg)
+{
+    current_default_background = new_bg;
+}
+
 
 void kprintc(char c, enum Color fg_color, enum Color bg_color)
 {
@@ -152,4 +167,44 @@ void clear_screen()
     text_cursor = (struct TextCell *)0xb8000;
     currh = 0;
     currv = 0;
+}
+
+
+void kprintf(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+
+    for (const char* p = format; *p != '\0'; ++p)
+    {
+        switch(*p)
+        {
+            case '%':
+                switch(*++p) // read format symbol
+                {
+                    case 'c':
+                        kprintc((char) va_arg(args, int), current_default_foreground, current_default_background);
+                        continue;
+                   case 's':
+                        kprints(va_arg(args, char*), current_default_foreground, current_default_background);
+                        continue;
+                    case 'd':
+                        kprinti(va_arg(args, int32_t), 10, current_default_foreground, current_default_background);
+                        continue;
+                    case 'u':
+                        kprintu(va_arg(args, uint32_t), 10, current_default_foreground, current_default_background);
+                        continue;
+                    case 'x':
+                        kprintu(va_arg(args, uint32_t), 16, current_default_foreground, current_default_background);
+                        continue;
+                    case 'l':
+                        kprintlx(va_arg(args, uint64_t), current_default_foreground, current_default_background);
+                        continue;
+                    case '%':
+                        kprintc('%', current_default_foreground, current_default_background);
+                        continue;
+                }
+        }
+        kprintc(*p, current_default_foreground, current_default_background);
+    }
 }
