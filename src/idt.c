@@ -66,8 +66,7 @@ void idt_set_descriptor(uint8_t vector, void isr(struct Interrupt_Frame*), enum 
 __attribute__((interrupt)) void default_exception_handler(struct Interrupt_Frame* frame)
 {
     disable_interrupts();
-    clear_screen();
-    kprints("Unhandled exception.", WHITE, BLACK, 0);
+    kprints("\nUnhandled exception.", WHITE, BLACK, 0);
     panic();
 }
 
@@ -75,24 +74,32 @@ __attribute__((interrupt)) void default_exception_handler(struct Interrupt_Frame
 __attribute__((interrupt)) void div_zero_exception_handler(struct Interrupt_Frame* frame)
 {
     disable_interrupts();
-    clear_screen();
-    kprints("Exception 0x00: ", WHITE, BLACK, 0);
+    kprints("\nException 0x00: ", WHITE, BLACK, 0);
     panic();
 }
 
 __attribute__((interrupt)) void double_fault_exception_handler(struct Interrupt_Frame* frame)
 {
     disable_interrupts();
-    clear_screen();
-    kprints("Exception 0x08: Double Fault", WHITE, BLACK, 0);
+    kprints("\nException 0x08: Double Fault", WHITE, BLACK, 0);
     panic();
 }
 
 
+__attribute__((interrupt)) void page_fault_exception_handler(struct Interrupt_Frame* frame)
+{
+    disable_interrupts();
+    kprints("\nException 0x0E: Page Fault", WHITE, BLACK, 0);
+    panic();
+}
+
+
+
+
+
 __attribute__((interrupt)) void default_interrupt_handler(struct Interrupt_Frame* frame)
 {
-    clear_screen();
-    kprints("Unhandled interrupt.", WHITE, BLACK, 0);
+    kprints("\nUnhandled interrupt.", WHITE, BLACK, 0);
     panic();
 }
 
@@ -122,7 +129,7 @@ void init_default_interrupts()
     // add exception-specific handlers
     idt_set_descriptor(0x00, div_zero_exception_handler, RING_0, TRAP_GATE_32);
     idt_set_descriptor(0x08, double_fault_exception_handler, RING_0, TRAP_GATE_32);
-
+    idt_set_descriptor(0x0E, page_fault_exception_handler, RING_0, TRAP_GATE_32);
     // add interrupt-specific handlers
 
     load_IDT(&idt_r);

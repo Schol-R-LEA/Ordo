@@ -20,6 +20,8 @@ KSTART=kstart
 IDT=idt
 TERMINAL=terminal
 MEM_MAP=mem_map
+ACPI=acpi
+
 
 install: boot stage2 link
 	$(COPY) if=/dev/zero of=$(OBJPATH)/$(DISKTARGET) count=$(DISKSIZE) bs=1k
@@ -33,11 +35,14 @@ install: boot stage2 link
 	rmdir temp
 	$(REIMAGE) convert -f raw -O qcow2 $(OBJPATH)/$(DISKTARGET) ordo.qcow2
 
-link: kstart kernel terminal mem_map idt
-	$(LD) -T $(LINK_SCRIPT) $(OBJPATH)/$(KERNEL).o $(OBJPATH)/$(TERMINAL).o $(OBJPATH)/$(MEM_MAP).o $(OBJPATH)/$(IDT).o -o $(OBJPATH)/$(KERNEL).elf
+link: kstart kernel terminal mem_map idt acpi
+	$(LD) -T $(LINK_SCRIPT) $(OBJPATH)/$(KERNEL).o $(OBJPATH)/$(TERMINAL).o $(OBJPATH)/$(MEM_MAP).o $(OBJPATH)/$(IDT).o $(OBJPATH)/$(ACPI).o -o $(OBJPATH)/$(KERNEL).elf
 
-kernel: terminal
+kernel: terminal mem_map idt acpi
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(KERNEL).c -o $(OBJPATH)/$(KERNEL).o
+
+acpi: terminal
+	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(ACPI).c -o $(OBJPATH)/$(ACPI).o
 
 idt:
 	$(CC) $(CFLAGS) -mgeneral-regs-only $(C_INCLUDES) -c $(C_SRC)/$(IDT).c -o $(OBJPATH)/$(IDT).o

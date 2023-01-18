@@ -4,6 +4,7 @@
 #include "terminal.h"
 #include "mem_map.h"
 #include "idt.h"
+#include "acpi.h"
 
 
 #define KDATA_OFFSET 0xc0010000
@@ -28,8 +29,12 @@ void kernel_main()
 
     init_default_interrupts();
 
+    init_acpi();
 
-    enable_interrupts();
+    //enable_interrupts();
+
+    kprints("End of kernel services", BLACK, CYAN, 0);
+    panic();
 }
 
 
