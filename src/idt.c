@@ -8,58 +8,6 @@
 __attribute__((aligned(0x10))) static struct Interrupt_Descriptor_32 idt[IDT_SIZE];
 
 
-struct Exception_Description_Entry
-{
-    char *isr_name, *isr_desc;
-};
-
-// lookup table for exception descriptions
-// With thanks to Nicholas Kelly for the original at
-// https://github.com/krisvers/kros/blob/master/kernel/arch/x64/isr.c
-
-/*
-static const struct Exception_Description_Entry Exception_Descriptions = {
-    {"Div0","Divide by zero"},
-    {"Debug", "Debug"},
-    {"NMI", "Non-maskable INT"},
-    {"Breakpoint", "Breakpoint"},
-    {"Overflow", "Overflow"},
-    {"BoundedRange", "Bound Range Exceeded"},
-    {"InvalidOpcode", "Invalid Opcode"},
-    {"NoDevice", "Device Not Available"},
-    {"DoubleFault", "Double Fault"},
-    {"CoprocessorSegmentOverrun", "Coprocessor Segment Overrun"},
-    {"InvalidTSS", "Invalid TSS"},
-    {"MissingSegment", "Segment Not Present"},
-    {"StackFault", "Stack-Segment Fault"},
-    {"GPF", "General Protection Fault"},
-    {"PageFault", "Page Fault"},
-    {"UnusedException_0x0F", ""},
-    {"FPError", "x87 Floating-Point Exception"},
-    {"Alignment", "Alignment Check"},
-    {"MachineCheck", "Machine Check"},
-    {"SIMDError", "SIMD Floating-Point Exception"},
-    {"Virtualization", "Virtualization Exception"},
-    {"CPE", "Control Protection Exception"},
-    {"UnusedException_0x17", "UnusedException_0x17"},
-    {"UnusedException_0x18", "UnusedException_0x18"},
-    {"UnusedException_0x19", "UnusedException_0x19"},
-    {"UnusedException_0x1A", "UnusedException_0x1A"},
-    {"UnusedException_0x1B", "UnusedException_0x1B"},
-    {"UnusedException_0x1C", "UnusedException_0x1C"},
-    {"HVInjection", "Hypervisor Injection Exception"},
-    {"VMMComm", "VMM Communication Exception"},
-    {"Security", "Security Exception"}
-};
-
-#define GENERATE_ISR(number, name, msg) __attribute__((interrupt)) void default_  name ## _exception_handler(struct Interrupt_Frame* frame) \
-{ \
-    disable_interrupts(); \
-    set_fg(WHITE); \
-    kprintf("\nException %u: ", number, msg); \
-    panic(); \
-} */
-
 void idt_set_descriptor(uint8_t vector, void isr(struct Interrupt_Frame*), enum PRIVILEGE_LEVEL dpl, enum IDT_gate_type gate_type)
 {
     struct Interrupt_Descriptor_32* descriptor = &idt[vector];
@@ -103,7 +51,6 @@ __attribute__((interrupt)) void page_fault_exception_handler(struct Interrupt_Fr
     kprints("\nException 0x0E: Page Fault", WHITE, BLACK);
     panic();
 }
-
 
 
 __attribute__((interrupt)) void default_interrupt_handler(struct Interrupt_Frame* frame)
