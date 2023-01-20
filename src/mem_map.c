@@ -20,7 +20,7 @@ void print_mmap(uint32_t count, struct memory_map_entry table[])
     kprintf("\n\nMemory map %d entries):\n", count);
 
     kprintf("Base Address       | Length             | Type                    | Ext.\n");
-    kprintf("----------------------------------------------------------------------------\n");
+    kprintf("--------------------------------------------------------------------------\n");
 
     set_fg(GRAY);
     struct memory_map_entry* entry = table;
@@ -28,7 +28,7 @@ void print_mmap(uint32_t count, struct memory_map_entry table[])
     {
         kprintf("%l", entry->base);
         kprints(MMAP_SPACER, WHITE, BLACK);
-        kprintf("%l", entry->length, GRAY, BLACK);
+        kprintf("%l", entry->length);
         kprints(MMAP_SPACER, WHITE, BLACK);
         kprintf("%s", mmap_types[entry->type]);
         kprintf(" (%d) ", entry->type);

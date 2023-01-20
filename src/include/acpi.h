@@ -29,6 +29,18 @@ struct RSDP_Extended_Descriptor
 } __attribute__ ((packed));
 
 
+struct ACPI_xSDT_Header {
+  char Signature[4];
+  uint32_t Length;
+  uint8_t Revision;
+  uint8_t Checksum;
+  char OEM_ID[6];
+  char OEM_Table_ID[8];
+  uint32_t OEM_Revision;
+  uint32_t Creator_ID;
+  uint32_t Creator_Revision;
+};
+
 
 void init_acpi();
 

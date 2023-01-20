@@ -170,6 +170,33 @@ void clear_screen()
 }
 
 
+void pad_ptr_util(uint32_t p, uint32_t mask)
+{
+    uint32_t block = p & mask;
+
+    if (block == 0)
+    {
+        kprintc('0', current_default_foreground, current_default_background);
+        pad_ptr_util(p, mask >> 4);
+    }
+}
+
+void pad_pointer(uint32_t p)
+{
+    if (p == 0)
+    {
+        kprints("0000000", current_default_foreground, current_default_background);
+    }
+    else 
+    {   if (p < 0x80000000)
+        {
+            kprintc('0', current_default_foreground, current_default_background);
+        }
+        pad_ptr_util(p, 0xff000000);
+    }
+}
+
+
 void kprintf(const char* format, ...)
 {
     va_list args;
@@ -200,6 +227,12 @@ void kprintf(const char* format, ...)
                     case 'l':
                         kprintlx(va_arg(args, uint64_t), current_default_foreground, current_default_background);
                         continue;
+                    case 'p':
+                        uint32_t ptr = va_arg(args, uint32_t);
+                        pad_pointer(ptr);
+                        kprintu(ptr, 16, current_default_foreground, current_default_background);
+                        continue;
+                    
                     case '%':
                         kprintc('%', current_default_foreground, current_default_background);
                         continue;

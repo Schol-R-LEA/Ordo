@@ -7,7 +7,7 @@
 
 
 struct RSDP_Extended_Descriptor *rsdp;
-
+struct ACPI_xSDT_Header *sdt;
 
 bool match_rsdp_signature(const char* candidate)
 {
@@ -62,19 +62,19 @@ bool validate_rsdp_checksum(struct RSDP_Extended_Descriptor *candidate)
 
     if ((checksum & 0x000000ff) != 0)
     {
-        kprints("First checksum failed!\n", GRAY, BLACK);
+        kprintf("First checksum failed!\n");
         return false;
     }
-    kprints("First checksum good... ", GRAY, BLACK);
+    kprintf("First checksum good... ");
 
     if (candidate->ver_1.Revision == 0)
     {
-        kprints("ACPI 1.0, no extended checksum.\n", GRAY, BLACK);
+        kprintf("ACPI 1.0, no extended checksum.\n");
         return true;
     }
     else if (candidate->ver_1.Revision != 2)
     {
-        kprints("Invalid revision, RSDP corrupted.\n", GRAY, BLACK);
+        kprintf("Invalid revision, RSDP corrupted.\n");
         return false;
     }
 
@@ -86,23 +86,38 @@ bool validate_rsdp_checksum(struct RSDP_Extended_Descriptor *candidate)
 
     if ((checksum & 0x000000ff) != 0)
     {
-        kprints("second checksum failed!\n", GRAY, BLACK);
+        kprintf("second checksum failed!\n");
         return false;
     }
 
-    kprints("second checksum good.\n", GRAY, BLACK);
+    kprintf("second checksum good.\n");
     return true;
+}
+
+
+bool validate_sdt_checksum(struct ACPI_xSDT_Header *candidate)
+{
+    int32_t checksum = 0;
+    uint8_t i;
+    int8_t* c_ptr = (int8_t *) candidate;
+
+    for (i = 0; i < sizeof(struct ACPI_xSDT_Header); i++)
+    {
+        checksum += c_ptr[i];
+    }
+
+    return (checksum == 0);
 }
 
 
 void init_acpi()
 {
-    kprints("\nSeeking RSDP... ", GRAY, BLACK);
+    kprintf("\nSeeking RSDP... ");
 
     rsdp = scan_rsdp_signature();
-    kprints("RDSP candidate found\n", GRAY, BLACK);
+    kprintf("RSDP candidate found\n");
 
-    kprints("OEM ID: ", GRAY, BLACK);
+    kprintf("OEM ID: ");
     for (unsigned int i = 0; i < 6; i++)
     {
         kprintc(rsdp->ver_1.OEM_ID[i], BLACK, WHITE);
@@ -112,7 +127,40 @@ void init_acpi()
 
     if (!validate_rsdp_checksum(rsdp))
     {
-        kprints("Error: invalid RDSP", WHITE, BLACK);
+        kprints("Error: invalid RSDP", LT_RED, BLACK);
         panic();
     }
+
+
+    // Get the system descriptor table.
+    // While the specific link used depends on the ACPI version,
+    // the table structure is the same regardless of version.
+
+    kprintf("size of the SDT header ptr: %u\n", sizeof(struct ACPI_xSDT_Header *));
+
+    sdt = (struct ACPI_xSDT_Header *) (rsdp->ver_1.Revision == 0
+                                       ? rsdp->ver_1.RsdtAddress
+                                       : (uint32_t) rsdp->XsdtAddress);
+
+    kprintf("xSDT candidate found at 0x%p\n", sdt);
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        kprintc(sdt->Signature[i], WHITE, BLACK);
+    }
+
+    kprintf(" OEM ID: ");
+    for (uint8_t i = 0; i < 6; i++)
+    {
+        kprintc(sdt->OEM_ID[i], BLACK, WHITE);
+    }
+    kprintc('\n', GRAY, BLACK);
+
+
+    if (!validate_sdt_checksum(sdt))
+    {
+        kprints("Error: invalid SDT", LT_RED, BLACK);
+        panic();
+    }
+    kprintf("SDT checksum valid.\n");
 }
