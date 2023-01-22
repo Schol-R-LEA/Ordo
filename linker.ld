@@ -2,6 +2,17 @@
    designated at the entry point. */
 ENTRY(kstart)
 
+INPUT(
+	obj/kernel.o
+	obj/terminal.o
+	obj/mem.o
+	obj/idt.o
+    obj/paging.o
+	obj/acpi.o
+)
+
+OUTPUT(kernel.elf)
+
 OUTPUT_FORMAT(elf32-i386)
 STARTUP(obj/kstart.o)
 
@@ -13,30 +24,57 @@ SECTIONS
 	. = 0xC0000000;
 
 	/* the .text section. */
-	.text BLOCK(4K) : ALIGN(4K)
+	.text : ALIGN(4K)
 	{
 		*(.text)
 	}
 
 	/* Read-only data. */
-	.rodata BLOCK(4K) : ALIGN(4K)
+	.rodata : ALIGN(4K)
 	{
 		*(.rodata)
 	}
 
 	/* Read-write data (initialized) */
-	.data BLOCK(4K) : ALIGN(4K)
+	.data : ALIGN(4K)
 	{
 		*(.data)
 	}
 
 	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : ALIGN(4K)
+	.bss : ALIGN(4K)
 	{
 		*(COMMON)
 		*(.bss)
 	}
 
-	/* The compiler may produce other sections, put them in the proper place in
-	   in this file, if you'd like to include them in the final kernel. */
+    /* hardware tables */
+    . = 0xC0100000;
+
+	.gdt :
+	{
+		gdt = .;
+		. = . + 64K;
+	}
+
+    .idt BLOCK(4K) : ALIGN(4K)
+	{
+		idt = .;
+		. = . + 4K;
+	}
+
+    .paging BLOCK(4K) : ALIGN(4K)
+	{
+        page_directory = .;
+        . = . + 4K;
+		page_tables = .;
+		. = . + (1K * 4K);
+	}
+
+    /* set up the stack */
+    .stack : ALIGN(4M)
+	{
+		stack_base = .;
+        *(.stack)
+	}
 }

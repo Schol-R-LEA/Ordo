@@ -27,11 +27,11 @@ struct IDT_R
 struct Interrupt_Descriptor_32
 {
     uint16_t offset_low;
-    enum GDT_entry segment_selector;
+    enum GDT_selector segment_selector;
     uint8_t reserved;
     struct
     {
-        uint8_t gate_type:4;
+        enum IDT_gate_type gate_type:4;
         uint8_t zero:1;
         uint8_t dpl:2;
         uint8_t p:1;

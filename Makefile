@@ -19,7 +19,8 @@ KERNEL=kernel
 KSTART=kstart
 IDT=idt
 TERMINAL=terminal
-MEM_MAP=mem_map
+MEM=mem
+PAGING=paging
 ACPI=acpi
 
 
@@ -35,20 +36,23 @@ install: boot stage2 link
 	rmdir temp
 	$(REIMAGE) convert -f raw -O qcow2 $(OBJPATH)/$(DISKTARGET) ordo.qcow2
 
-link: kstart kernel terminal mem_map idt acpi
-	$(LD) -T $(LINK_SCRIPT) $(OBJPATH)/$(KERNEL).o $(OBJPATH)/$(TERMINAL).o $(OBJPATH)/$(MEM_MAP).o $(OBJPATH)/$(IDT).o $(OBJPATH)/$(ACPI).o -o $(OBJPATH)/$(KERNEL).elf
+link: kstart kernel terminal mem idt acpi paging
+	$(LD) -T $(LINK_SCRIPT)
 
-kernel: terminal mem_map idt acpi
+kernel: terminal paging mem idt acpi
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(KERNEL).c -o $(OBJPATH)/$(KERNEL).o
 
 acpi: terminal
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(ACPI).c -o $(OBJPATH)/$(ACPI).o
 
-idt:
+idt: terminal
 	$(CC) $(CFLAGS) -mgeneral-regs-only $(C_INCLUDES) -c $(C_SRC)/$(IDT).c -o $(OBJPATH)/$(IDT).o
 
-mem_map:
-	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(MEM_MAP).c -o $(OBJPATH)/$(MEM_MAP).o
+paging: terminal mem
+	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(PAGING).c -o $(OBJPATH)/$(PAGING).o
+
+mem: terminal
+	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(MEM).c -o $(OBJPATH)/$(MEM).o
 
 terminal:
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(TERMINAL).c -o $(OBJPATH)/$(TERMINAL).o

@@ -1,5 +1,6 @@
 #include <stdint.h>
-#include "mem_map.h"
+#include <stddef.h>
+#include "mem.h"
 #include "terminal.h"
 
 #define MMAP_SPACER "   | "
@@ -35,4 +36,31 @@ void print_mmap(uint32_t count, struct memory_map_entry table[])
         kprints(MMAP_SPACER, WHITE, BLACK);
         kprintf(" %d\n", entry->ext);
     }
+}
+
+
+void* memset(void *ptr,  char value, size_t num)
+{
+    uint8_t *p = (uint8_t *)ptr;
+
+    while (num--)
+    {
+        p++ = value;
+    }
+
+    return p;
+}
+
+
+void* memcpy(void *destination, void *source, size_t num)
+{
+    uint8_t *dest = (uint8_t*)destination;
+    uint8_t *src = (uint8_t*)source;
+
+    while (num--)
+    {
+        dest++ = src++;
+    }
+
+    return dest;
 }

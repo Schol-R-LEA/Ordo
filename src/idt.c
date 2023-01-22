@@ -5,7 +5,7 @@
 #include "terminal.h"
 
 
-__attribute__((aligned(0x10))) static struct Interrupt_Descriptor_32 idt[IDT_SIZE];
+extern struct Interrupt_Descriptor_32 *idt;
 
 
 void idt_set_descriptor(uint8_t vector, void isr(struct Interrupt_Frame*), enum PRIVILEGE_LEVEL dpl, enum IDT_gate_type gate_type)

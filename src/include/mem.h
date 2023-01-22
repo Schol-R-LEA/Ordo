@@ -1,6 +1,7 @@
-#ifndef MEM_MAP_H
-#define MEM_MAP_H
+#ifndef MEM_H
+#define MEM_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 struct memory_map_entry
@@ -13,5 +14,10 @@ struct memory_map_entry
 
 
 void print_mmap(uint32_t count, struct memory_map_entry table[]);
+
+
+void* memset(void *ptr,  char value, size_t num);
+void* memcpy(void *destination, void *source, size_t num);
+
 
 #endif

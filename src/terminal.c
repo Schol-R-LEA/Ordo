@@ -187,12 +187,12 @@ void pad_pointer(uint32_t p)
     {
         kprints("0000000", current_default_foreground, current_default_background);
     }
-    else 
-    {   if (p < 0x80000000)
+    else
+    {   if (p < 0x10000000)
         {
             kprintc('0', current_default_foreground, current_default_background);
+            pad_ptr_util(p, 0xf0000000);
         }
-        pad_ptr_util(p, 0xff000000);
     }
 }
 
