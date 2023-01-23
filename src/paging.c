@@ -15,6 +15,7 @@ union Page_Directory_Entry *set_page_directory_entry(union Page_Directory_Entry*
 
     if (page_size)
     {
+
         entry->mpage_entry.present = 1;
         entry->mpage_entry.read_write = rw;
         entry->mpage_entry.user = user;
@@ -22,6 +23,7 @@ union Page_Directory_Entry *set_page_directory_entry(union Page_Directory_Entry*
         entry->mpage_entry.cache_disable = no_caching;
         entry->mpage_entry.accessed = false;
         entry->mpage_entry.dirty = false;
+        entry->mpage_entry.page_size = page_size;
         entry->mpage_entry.global = global;
         entry->mpage_entry.available = 0;
         entry->mpage_entry.page_attribute_table = false;
@@ -38,6 +40,7 @@ union Page_Directory_Entry *set_page_directory_entry(union Page_Directory_Entry*
         entry->kpage_entry.cache_disable = no_caching;
         entry->kpage_entry.accessed = false;
         entry->kpage_entry.dirty = false;
+        entry->mpage_entry.page_size = page_size;
         entry->kpage_entry.available = 0;
         entry->kpage_entry.address = address & 0xFFFFF;
     }
@@ -58,8 +61,18 @@ union Page_Table_Entry* set_page_table_entry(union Page_Table_Entry* entry)
 
 void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE])
 {
+    set_page_directory_entry(page_directory, 0, false, true, false, false, false, false);
 
+    // first, identity map the first 1MiB
+    for (int i = 0; i < LOW_MEMORY_PAGE_COUNT; i++)
+    {
+        set_page_table_entry(&page_tables[i]);
+    }
 
-   // set_page_directory_entry(page_directory, page_tables);
-   // set_page_table_entry(&page_tables[0]);
+    // next, map the physical location of the kernel code
+    for (int i = KERNEL_BASE; i < (KERNEL_BASE + KDATA_OFFSET); i++)
+    {
+        set_page_table_entry(&page_tables[i]);
+    }
+
 }

@@ -51,6 +51,16 @@ SECTIONS
 
     /* hardware tables */
     . = 0xC0100000;
+    .tables :
+	{
+		tables_base = .;
+	}
+
+    .boot_data BLOCK(4K) : ALIGN (4K)
+    {
+        boot_data = .;
+		. = . + 4K;
+    }
 
 	.gdt BLOCK(64K) :
 	{

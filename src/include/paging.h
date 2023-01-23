@@ -4,10 +4,10 @@
 #include "kernel.h"
 #include "mem.h"
 
-#define PD_SIZE 1024
-#define PT_SIZE 1024
+#define PD_SIZE 0x0400
+#define PT_SIZE 0x0400
 
-
+#define LOW_MEMORY_PAGE_COUNT (0x100000 / PT_SIZE)
 
 struct Page_Directory_Entry_kilobyte
 {
