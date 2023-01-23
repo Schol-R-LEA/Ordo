@@ -84,6 +84,6 @@ SECTIONS
     .stack :
 	{
 		kernel_stack_base = .;
-		kernel_stack_top = . + (4M - 4);
+		kernel_stack_top = . + 16K;
 	}
 }

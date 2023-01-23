@@ -5,8 +5,7 @@
 
 [SECTION .text]
 kstart:
-        mov eax, kernel_stack_top
-        mov esp, eax
+        mov esp, kernel_stack_top
 
         call kernel_main
 
