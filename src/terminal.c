@@ -170,28 +170,19 @@ void clear_screen()
 }
 
 
-void pad_ptr_util(uint32_t p, uint32_t mask)
-{
-    uint32_t block = p & mask;
-
-    if (block == 0)
-    {
-        kprintc('0', current_default_foreground, current_default_background);
-        pad_ptr_util(p, mask >> 4);
-    }
-}
-
 void pad_pointer(uint32_t p)
 {
     if (p == 0)
     {
         kprints("0000000", current_default_foreground, current_default_background);
     }
-    else
-    {   if (p < 0x10000000)
+    else if (p < 0x10000000)
+    {
+        uint32_t mask = 0xf0000000;
+        while ((p & mask) == 0)
         {
             kprintc('0', current_default_foreground, current_default_background);
-            pad_ptr_util(p, 0xf0000000);
+            mask >>= 4;
         }
     }
 }

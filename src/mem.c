@@ -45,7 +45,7 @@ void* memset(void *ptr,  char value, size_t num)
 
     while (num--)
     {
-        p++ = value;
+        *(p++) = value;
     }
 
     return p;
@@ -59,7 +59,7 @@ void* memcpy(void *destination, void *source, size_t num)
 
     while (num--)
     {
-        dest++ = src++;
+        *(dest++) = *(src++);
     }
 
     return dest;

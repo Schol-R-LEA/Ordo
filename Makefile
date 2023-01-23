@@ -17,6 +17,7 @@ C_INCLUDES=-I $(C_SRC)/include
 OBJPATH=obj
 KERNEL=kernel
 KSTART=kstart
+GDT=gdt
 IDT=idt
 TERMINAL=terminal
 MEM=mem
@@ -39,7 +40,7 @@ install: boot stage2 link
 link: kstart kernel terminal mem idt acpi paging
 	$(LD) -T $(LINK_SCRIPT)
 
-kernel: terminal paging mem idt acpi
+kernel: terminal paging mem idt gdt acpi
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(KERNEL).c -o $(OBJPATH)/$(KERNEL).o
 
 acpi: terminal
@@ -47,6 +48,9 @@ acpi: terminal
 
 idt: terminal
 	$(CC) $(CFLAGS) -mgeneral-regs-only $(C_INCLUDES) -c $(C_SRC)/$(IDT).c -o $(OBJPATH)/$(IDT).o
+
+gdt:
+	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(GDT).c -o $(OBJPATH)/$(GDT).o
 
 paging: terminal mem
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(PAGING).c -o $(OBJPATH)/$(PAGING).o

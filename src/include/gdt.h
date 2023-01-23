@@ -5,6 +5,9 @@
 #include "kernel.h"
 
 
+#define MAX_GDT_ENTRIES 32
+
+
 enum GDT_selector: uint16_t
 {
     null_selector,
@@ -19,11 +22,11 @@ enum GDT_selector: uint16_t
 struct GDT_R
 {
     uint16_t limit;
-    uint32_t base;
+    union GDT_Entry* base;
 };
 
 
-struct GDT_Entry
+struct gdt_entry_fields
 {
     uint16_t limit_low;
     uint16_t base_low;
@@ -34,7 +37,7 @@ struct GDT_Entry
         bool read_write:1;
         bool direction_conforming:1;
         bool executable:1;
-        bool not_sys:1;
+        bool non_sys:1;
         enum PRIVILEGE_LEVEL dpl:2;
         bool present:1;
     } access;
@@ -43,13 +46,23 @@ struct GDT_Entry
         uint8_t limit_high:4;
         bool reserved:1;
         bool long_mode:1;
-        bool size:1;
+        bool bits_32:1;
         bool granularity:1;
     } limit_and_flags;
     uint8_t base_high;
 };
 
-extern struct GDT_R *gdt_r;
-extern struct GDT_Entry *gdt;
+
+union GDT_Entry
+{
+    uint64_t raw_entry;
+    struct gdt_entry_fields fields;
+};
+
+
+extern union GDT_Entry *gdt;
+
+void reset_gdt();
+
 
 #endif

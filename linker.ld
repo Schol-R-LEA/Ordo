@@ -7,6 +7,7 @@ INPUT(
 	obj/terminal.o
 	obj/mem.o
 	obj/idt.o
+	obj/gdt.o
     obj/paging.o
 	obj/acpi.o
 )
@@ -55,6 +56,12 @@ SECTIONS
 	{
 		gdt = .;
 		. = . + 64K;
+	}
+
+	.tss BLOCK(4K) : ALIGN(4K)
+	{
+		default_tss = .;
+		. = . + 4K;
 	}
 
     .idt BLOCK(4K) : ALIGN(4K)

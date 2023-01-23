@@ -4,6 +4,7 @@
 #include "terminal.h"
 #include "mem.h"
 #include "paging.h"
+#include "gdt.h"
 #include "idt.h"
 #include "acpi.h"
 
@@ -14,6 +15,8 @@ void kernel_main()
     kprints("Starting Kernel...\n", CYAN, BLACK);
 
     struct kdata* boot_data = (struct kdata*) (KDATA_OFFSET - sizeof(struct kdata) - 16);
+
+    reset_gdt();
 
     print_mmap(boot_data->mmap_cnt, boot_data->mem_table);
 
