@@ -26,8 +26,6 @@ union GDT_Entry *set_gdt_entry(union GDT_Entry * entry, uint32_t limit, uint32_t
 }
 
 
-
-
 void reset_gdt()
 {
     struct GDT_R gdt_r = { sizeof(union GDT_Entry) * MAX_GDT_ENTRIES, gdt };
@@ -35,16 +33,16 @@ void reset_gdt()
     union GDT_Entry *entry = gdt;
     // set the null GDT entry
     entry->raw_entry = 0;
-    // system code selector
+    // system code descriptor
     set_gdt_entry(++entry, 0x0fffff, 0, true, true, RING_0);
-    // system data selector
+    // system data descriptor
     set_gdt_entry(++entry, 0x0fffff, 0, false, true, RING_0);
-    // system TSS selector
+    // system TSS descriptor
     set_gdt_entry(entry, (uint32_t) default_tss, sizeof(struct TSS), false, true, RING_0);
     (entry++)->fields.access.non_sys = false;
-    // user code selector
+    // user code descriptor
     set_gdt_entry(++entry, 0x08ffff, 0, true, true, RING_3);
-    // user data selector
+    // user data descriptor
     set_gdt_entry(++entry, 0x08ffff, 0, false, true, RING_3);
 
     // set the GDT register

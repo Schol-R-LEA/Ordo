@@ -52,7 +52,7 @@ SECTIONS
     /* hardware tables */
     . = 0xC0100000;
 
-	.gdt :
+	.gdt BLOCK(64K) :
 	{
 		gdt = .;
 		. = . + 64K;
@@ -78,10 +78,12 @@ SECTIONS
 		. = . + (1K * 4K);
 	}
 
-    /* set up the stack */
-    .stack : ALIGN(4M)
+    /* set up the kernel stack */
+    . = 0xC1000000;
+
+    .stack :
 	{
-		stack_base = .;
-        *(.stack)
+		kernel_stack_base = .;
+		kernel_stack_top = . + (4M - 4);
 	}
 }

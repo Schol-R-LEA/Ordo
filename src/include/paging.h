@@ -4,6 +4,9 @@
 #include "kernel.h"
 #include "mem.h"
 
+#define PD_SIZE 1024
+#define PT_SIZE 1024
+
 
 
 struct Page_Directory_Entry_kilobyte
@@ -35,9 +38,9 @@ struct Page_Directory_Entry_megabyte
     bool global:1;
     uint8_t available:3;
     bool page_attribute_table:1;
-    uint32_t address_hi:8;
+    uint8_t address_hi:8;
     bool reserved:1;
-    uint32_t address_lo:10;
+    uint16_t address_lo:10;
 };
 
 
@@ -45,7 +48,7 @@ union Page_Directory_Entry
 {
     uint32_t raw_entry;
     struct Page_Directory_Entry_kilobyte kpage_entry;
-    struct Page_Directory_Entry_kilobyte mpage_entry;
+    struct Page_Directory_Entry_megabyte mpage_entry;
 } __attribute__((aligned(8)));
 
 
@@ -73,7 +76,15 @@ union Page_Table_Entry
 } __attribute__((aligned(8))) ;
 
 
-void update_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE]);
+extern union Page_Directory_Entry* page_directory;
+extern union Page_Table_Entry* page_tables;
+
+union Page_Directory_Entry *set_page_directory_entry(union Page_Directory_Entry* entry, uint32_t address, bool page_size, bool rw, bool user, bool write_thru, bool no_caching, bool global);
+
+
+union Page_Table_Entry* set_page_table_entry(union Page_Table_Entry* entry);
+
+void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE]);
 
 
 #endif

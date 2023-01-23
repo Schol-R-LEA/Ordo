@@ -20,7 +20,7 @@ void kernel_main()
 
     print_mmap(boot_data->mmap_cnt, boot_data->mem_table);
 
-    update_default_paging(boot_data->mmap_cnt, boot_data->mem_table);
+    reset_default_paging(boot_data->mmap_cnt, boot_data->mem_table);
 
     init_default_interrupts();
 

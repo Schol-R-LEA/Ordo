@@ -3,6 +3,9 @@
 
 #include "mem.h"
 
+
+#define KERNEL_BASE 0xC0000000
+
 #define KDATA_OFFSET 0xc0010000
 #define KDATA_FAT_SIZE (9 * 512)
 #define KDATA_MAX_MEMTABLE_SIZE 16
