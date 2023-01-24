@@ -53,7 +53,7 @@ idt: terminal
 
 gdt:
 	$(ASM) -f elf32 $(C_SRC)/$(GDT_SET).asm -o $(OBJPATH)/$(GDT_SET).o -l $(OBJPATH)/$(GDT_SET).lst
-	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(GDT).c  $(OBJPATH)/$(GDT_SET).o -o $(OBJPATH)/$(GDT).o
+	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(GDT).c -o $(OBJPATH)/$(GDT).o
 
 paging: terminal mem
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(PAGING).c -o $(OBJPATH)/$(PAGING).o
