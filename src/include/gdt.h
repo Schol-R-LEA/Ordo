@@ -6,6 +6,7 @@
 
 
 #define MAX_GDT_ENTRIES 0x1000
+#define GDT_SIZE ((sizeof(union GDT_Entry) * MAX_GDT_ENTRIES) - 1)
 
 
 enum GDT_selector: uint16_t
