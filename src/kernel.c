@@ -30,7 +30,7 @@ void kernel_main()
     init_default_interrupts();
     enable_interrupts();
 
-  //  init_acpi();
+    init_acpi();
 
 
     kprints("End of kernel services", BLACK, CYAN);
