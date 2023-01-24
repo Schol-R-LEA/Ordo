@@ -38,7 +38,7 @@ install: boot stage2 link
 	$(REIMAGE) convert -f raw -O qcow2 $(OBJPATH)/$(DISKTARGET) ordo.qcow2
 
 link: kstart kernel terminal mem idt acpi paging gdt
-	$(LD) -T $(LINK_SCRIPT) 
+	$(LD) -T $(LINK_SCRIPT)
 
 kernel: terminal paging mem idt gdt acpi
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(KERNEL).c -o $(OBJPATH)/$(KERNEL).o

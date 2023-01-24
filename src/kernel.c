@@ -20,14 +20,15 @@ void kernel_main()
     kprintf("Moving the memory map");
     memcpy(boot_data, _boot_data, sizeof(struct kdata));
 
-    reset_gdt();
+  //  reset_gdt();
   //  reset_default_paging(boot_data->mmap_cnt, boot_data->mem_table);
 
     print_mmap(boot_data->mmap_cnt, boot_data->mem_table);
 
     init_default_interrupts();
-  //  enable_interrupts();
-  //  init_acpi();
+    enable_interrupts();
+
+    init_acpi();
 
 
     kprints("End of kernel services", BLACK, CYAN);

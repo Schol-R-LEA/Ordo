@@ -87,7 +87,7 @@ SECTIONS
         page_directory = .;
         . = . + 4K;
 		page_tables = .;
-		. = . + (1K * 4K);
+		. = . + (4M);
 	}
 
     /* set up the kernel stack */
