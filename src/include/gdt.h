@@ -5,7 +5,7 @@
 #include "kernel.h"
 
 
-#define MAX_GDT_ENTRIES 32
+#define MAX_GDT_ENTRIES 0x1000
 
 
 enum GDT_selector: uint16_t

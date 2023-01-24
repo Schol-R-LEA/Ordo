@@ -154,6 +154,7 @@ void kprintlx(const uint64_t i, enum Color fg_color, enum Color bg_color)
     kprintu(value.sections.lo, 16, fg_color, bg_color);
 }
 
+
 void clear_screen()
 {
     struct TextCell *temp = (struct TextCell *)0xb8000;

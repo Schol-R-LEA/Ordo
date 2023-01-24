@@ -17,7 +17,9 @@ void kernel_main()
 
     struct kdata* _boot_data = (struct kdata*) (KDATA_OFFSET - sizeof(struct kdata) - 16);
 
-    kprintf("Moving the memory map");
+    set_fg(GRAY);
+    kprintf("Moving the memory map\n");
+
     memcpy(boot_data, _boot_data, sizeof(struct kdata));
 
   //  reset_gdt();
@@ -28,7 +30,7 @@ void kernel_main()
     init_default_interrupts();
     enable_interrupts();
 
-    init_acpi();
+  //  init_acpi();
 
 
     kprints("End of kernel services", BLACK, CYAN);

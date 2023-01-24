@@ -53,6 +53,7 @@ SECTIONS
 
     /* hardware tables */
     . = 0xC0100000;
+
     .tables :
 	{
 		tables_base = .;
@@ -61,10 +62,10 @@ SECTIONS
     .boot_data BLOCK(4K) : ALIGN (4K)
     {
         boot_data = .;
-		. = . + 4K;
+		. = . + 8K;
     }
 
-	.gdt BLOCK(64K) :
+	.gdt BLOCK(64K) : ALIGN (4K)
 	{
 		gdt = .;
 		. = . + 64K;
@@ -93,9 +94,10 @@ SECTIONS
     /* set up the kernel stack */
     . = 0xC1000000;
 
-    .stack : ALIGN(16)
+	.stack : ALIGN(4K)
 	{
 		kernel_stack_base = .;
+		*(.stack)
 		kernel_stack_top = . + 16K;
 	}
 }
