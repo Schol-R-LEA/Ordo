@@ -18,6 +18,7 @@ OBJPATH=obj
 KERNEL=kernel
 KSTART=kstart
 GDT=gdt
+GDT_SET=gdt_set
 IDT=idt
 TERMINAL=terminal
 MEM=mem
@@ -50,7 +51,8 @@ idt: terminal
 	$(CC) $(CFLAGS) -mgeneral-regs-only $(C_INCLUDES) -c $(C_SRC)/$(IDT).c -o $(OBJPATH)/$(IDT).o
 
 gdt:
-	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(GDT).c -o $(OBJPATH)/$(GDT).o
+	$(ASM) -f elf32 $(C_SRC)/$(GDT_SET).asm -o $(OBJPATH)/$(GDT_SET).o -l $(OBJPATH)/$(GDT_SET).lst
+	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(GDT).c  $(OBJPATH)/$(GDT_SET).o -o $(OBJPATH)/$(GDT).o
 
 paging: terminal mem
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(PAGING).c -o $(OBJPATH)/$(PAGING).o

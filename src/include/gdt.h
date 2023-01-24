@@ -23,7 +23,7 @@ struct GDT_R
 {
     uint16_t limit;
     union GDT_Entry* base;
-};
+} __attribute__ ((packed));
 
 
 struct gdt_entry_fields
@@ -59,8 +59,11 @@ union GDT_Entry
     struct gdt_entry_fields fields;
 };
 
-
 extern union GDT_Entry *gdt;
+
+
+extern void set_gdt(struct GDT_R *gdt_r);
+extern void reload_segments();
 
 void reset_gdt();
 

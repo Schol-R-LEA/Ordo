@@ -9,6 +9,7 @@ INPUT(
 	obj/mem.o
 	obj/idt.o
 	obj/gdt.o
+	obj/gdt_set.o
     obj/paging.o
 	obj/acpi.o
 )

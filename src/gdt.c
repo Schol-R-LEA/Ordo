@@ -2,12 +2,11 @@
 #include "gdt.h"
 #include "tss.h"
 
-
 union GDT_Entry *set_gdt_entry(union GDT_Entry * entry, uint32_t limit, uint32_t base, bool exec, bool rw, enum PRIVILEGE_LEVEL dpl)
 {
     entry->fields.limit_low = limit & 0xffff;
     entry->fields.base_low = base & 0xffff;
-    entry->fields.base_mid = (base >> 16) & 0xffff;
+    entry->fields.base_mid = (base >> 16) & 0xff;
     entry->fields.access.accessed = false;
     entry->fields.access.read_write = rw;
     entry->fields.access.direction_conforming = false;
@@ -15,7 +14,7 @@ union GDT_Entry *set_gdt_entry(union GDT_Entry * entry, uint32_t limit, uint32_t
     entry->fields.access.non_sys = true;
     entry->fields.access.dpl = dpl;
     entry->fields.access.present = true;
-    entry->fields.limit_and_flags.limit_high = (limit >> 16) & 0xff;
+    entry->fields.limit_and_flags.limit_high = (limit >> 16) & 0x0f;
     entry->fields.limit_and_flags.reserved = false;
     entry->fields.limit_and_flags.long_mode = false;
     entry->fields.limit_and_flags.bits_32 = true;
@@ -47,17 +46,6 @@ void reset_gdt()
     set_gdt_entry(++entry, 0x08ffff, 0, false, true, RING_3);
 
     // set the GDT register
-    __asm__ __volatile__ (
-        "        lgdt %0;"
-        "        jmp %%cs:reload_CS;"
-        "reload_CS:;"
-        "        mov 0, %%eax;"
-        "        mov %%eax, %%ds;"
-        "        mov %%eax, %%es;"
-        "        mov %%eax, %%fs;"
-        "        mov %%eax, %%gs;"
-        "        mov %%eax, %%ss;"
-        :
-        : "m" (gdt_r)
-        : "eax");
+    set_gdt(&gdt_r);
+    reload_segments();
 }
