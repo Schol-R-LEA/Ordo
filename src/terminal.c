@@ -1,18 +1,29 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "terminal.h"
-
+#include "mem.h"
 
 #define BUFFER 0xB8000
 
 volatile const struct TextCell* text_buffer = (struct TextCell *)BUFFER;
 
-const uint16_t MAXH = 80, MAXV = 25, MAX_TEXT = MAXH * MAXV;
+const uint16_t MAXH = 80, MAXV = 25, MAX_TEXT = MAXH * MAXV, CELLS_PER_LINE = MAXH * 2;
 uint16_t currv = 0, currh = 0;
 struct TextCell* text_cursor = (struct TextCell *)BUFFER;
 
 enum Color current_default_foreground = GRAY;
 enum Color current_default_background = BLACK;
+
+void scroll()
+{
+    for (uint32_t i = 0; i < MAXV - 1; i += MAXH)
+    {
+        memcpy((void *) &text_buffer[i], (void *) &text_buffer[i+MAXH], CELLS_PER_LINE);
+    }
+
+    // reset the cursor to the start of the last line
+    gotoxy(0, MAXV - 1);
+}
 
 
 void advance_cursor()
@@ -31,23 +42,27 @@ void advance_cursor()
         }
         else
         {
-            currv = MAXV - 1;
-            /* handle scrolling */
+            scroll();
         }
     }
 }
 
+
 void gotoxy(uint16_t x, uint16_t y)
 {
+    x = (x < MAXH) ? x : MAXH - 1;
+    y = (y < MAXV) ? y : MAXV - 1;
     text_cursor = (struct TextCell *)((BUFFER + (2 * (x + (MAXH * y)))));
     currh = x;
     currv = y;
 }
 
+
 void set_fg(enum Color new_fg)
 {
     current_default_foreground = new_fg;
 }
+
 
 void set_bg(enum Color new_bg)
 {
@@ -60,6 +75,10 @@ void kprintc(char c, enum Color fg_color, enum Color bg_color)
     if (c == '\n')
     {
         gotoxy(0, currv + 1);
+        if (currv > MAXV)
+        {
+            scroll();
+        }
     }
     else if (c == '\t')
     {

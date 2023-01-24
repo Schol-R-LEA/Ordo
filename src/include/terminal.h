@@ -3,7 +3,6 @@
 #include <stdint.h>
 
 
-
 enum Color: uint8_t
 {
     BLACK,
@@ -11,15 +10,16 @@ enum Color: uint8_t
     GREEN,
     CYAN,
     RED,
-    PURPLE,
+    MAGENTA,
     BROWN,
     GRAY,
+
     DARK_GRAY,
     LT_BLUE,
     LT_GREEN,
     LT_CYAN,
     LT_RED,
-    LT_PURPLE,
+    LT_MAGENTA,
     YELLOW,
     WHITE
 };

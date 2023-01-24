@@ -27,6 +27,7 @@ ACPI=acpi
 
 
 install: boot stage2 link
+	mkdir -p obj
 	$(COPY) if=/dev/zero of=$(OBJPATH)/$(DISKTARGET) count=$(DISKSIZE) bs=1k
 	$(FORMAT) $(OBJPATH)/$(DISKTARGET)
 	$(COPY) if=$(OBJPATH)/$(BOOT).bin of=$(OBJPATH)/$(DISKTARGET) count=1 conv=notrunc

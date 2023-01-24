@@ -22,6 +22,9 @@ void kernel_main()
 
     memcpy(boot_data, _boot_data, sizeof(struct kdata));
 
+    init_default_interrupts();
+
+    kprintf("Resetting GDT\n");
     reset_gdt();
   //  reset_default_paging(boot_data->mmap_cnt, boot_data->mem_table);
 
