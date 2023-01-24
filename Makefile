@@ -29,7 +29,7 @@ install: boot stage2 link
 	$(COPY) if=/dev/zero of=$(OBJPATH)/$(DISKTARGET) count=$(DISKSIZE) bs=1k
 	$(FORMAT) $(OBJPATH)/$(DISKTARGET)
 	$(COPY) if=$(OBJPATH)/$(BOOT).bin of=$(OBJPATH)/$(DISKTARGET) count=1 conv=notrunc
-	mkdir temp
+	mkdir -p temp
 	sudo mount $(OBJPATH)/$(DISKTARGET) temp
 	sudo cp $(OBJPATH)/$(STAGE_TWO).bin temp/STAGETWO.SYS
 	sudo cp $(OBJPATH)/$(KERNEL).elf temp/KERNEL.SYS
@@ -37,7 +37,7 @@ install: boot stage2 link
 	rmdir temp
 	$(REIMAGE) convert -f raw -O qcow2 $(OBJPATH)/$(DISKTARGET) ordo.qcow2
 
-link: kstart kernel terminal mem idt acpi paging
+link: kstart kernel terminal mem idt acpi paging gdt
 	$(LD) -T $(LINK_SCRIPT)
 
 kernel: terminal paging mem idt gdt acpi

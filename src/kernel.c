@@ -15,17 +15,17 @@ void kernel_main()
     clear_screen();
     kprints("Starting Kernel...\n", CYAN, BLACK);
 
-   // struct kdata* boot_data = (struct kdata*) KDATA_OFFSET - 0x2000;
     struct kdata* _boot_data = (struct kdata*) (KDATA_OFFSET - sizeof(struct kdata) - 16);
 
+    kprintf("Moving the memory map");
     memcpy(boot_data, _boot_data, sizeof(struct kdata));
-
 
     reset_gdt();
 
-    print_mmap(boot_data->mmap_cnt, boot_data->mem_table);
-
     reset_default_paging(boot_data->mmap_cnt, boot_data->mem_table);
+
+
+    print_mmap(boot_data->mmap_cnt, boot_data->mem_table);
 
     init_default_interrupts();
 

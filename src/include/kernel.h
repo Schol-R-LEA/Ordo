@@ -3,13 +3,14 @@
 
 #include "mem.h"
 
-
 #define KERNEL_BASE 0xC0000000
 #define KERNEL_PHYS_BASE 0x00010000
 
 #define KDATA_OFFSET (KERNEL_BASE + 0x10000)
 #define KDATA_FAT_SIZE (9 * 512)
 #define KDATA_MAX_MEMTABLE_SIZE 16
+
+#define KERNEL_CODE_PAGE_COUNT (0x10000 / 0x1000)
 
 
 struct kdata

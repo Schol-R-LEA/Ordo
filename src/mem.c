@@ -39,7 +39,7 @@ void print_mmap(uint32_t count, struct memory_map_entry table[])
 }
 
 
-void* memset(void *ptr,  char value, size_t num)
+void* memset(void *ptr, char value, size_t num)
 {
     uint8_t *p = (uint8_t *)ptr;
 
