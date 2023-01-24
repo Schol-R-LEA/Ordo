@@ -2,6 +2,7 @@
    designated at the entry point. */
 ENTRY(kstart)
 
+
 INPUT(
 	obj/kernel.o
 	obj/terminal.o
@@ -12,7 +13,8 @@ INPUT(
 	obj/acpi.o
 )
 
-OUTPUT(kernel.elf)
+
+OUTPUT(obj/kernel.elf)
 
 OUTPUT_FORMAT(elf32-i386)
 STARTUP(obj/kstart.o)
@@ -91,7 +93,7 @@ SECTIONS
     /* set up the kernel stack */
     . = 0xC1000000;
 
-    .stack :
+    .stack : ALIGN(16)
 	{
 		kernel_stack_base = .;
 		kernel_stack_top = . + 16K;
