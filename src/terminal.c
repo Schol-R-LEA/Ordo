@@ -15,16 +15,17 @@ struct TextCell* text_cursor = (struct TextCell *)BUFFER;
 enum Color current_default_foreground = GRAY;
 enum Color current_default_background = BLACK;
 
+
 void scroll()
 {
-    for (uint32_t i = 0; i < MAX_TEXT; i += MAXH)
+    text_cursor = (struct TextCell *)BUFFER;
+    for (uint16_t i = 0; i < MAX_TEXT - MAXH; i += MAXH)
     {
-        memcpy((void *) &text_buffer[i], (void *) &text_buffer[i+MAXH], BYTES_PER_LINE);
+        memcpy(&text_cursor[i], &text_cursor[i + MAXH], BYTES_PER_LINE);
     }
-
     // reset the cursor to the start of the last line
     gotoxy(0, MAXV - 1);
-    memset((void *) &text_buffer[currv], 0, BYTES_PER_LINE);
+    memset(text_cursor, 0, BYTES_PER_LINE);
 }
 
 
@@ -73,13 +74,15 @@ void kprintc(char c, enum Color fg_color, enum Color bg_color)
 {
     if (c == '\n')
     {
-        if (currv >= MAXV - 1)
+        currh = 0;
+        currv++;
+        if (currv < MAXV)
         {
-            scroll();
+            gotoxy(0, currv);
         }
         else
         {
-            gotoxy(0, currv + 1);
+            scroll();
         }
     }
     else if (c == '\t')
@@ -94,6 +97,7 @@ void kprintc(char c, enum Color fg_color, enum Color bg_color)
         advance_cursor();
     }
 }
+
 
 void kprints(const char *string, enum Color fg_color, enum Color bg_color)
 {
@@ -215,6 +219,7 @@ void kprintf(const char* format, ...)
     va_list args;
     va_start(args, format);
 
+
     for (const char* p = format; *p != '\0'; ++p)
     {
         switch(*p)
@@ -245,10 +250,19 @@ void kprintf(const char* format, ...)
                         pad_pointer(ptr);
                         kprintu(ptr, 16, current_default_foreground, current_default_background);
                         continue;
-                    
+
                     case '%':
                         kprintc('%', current_default_foreground, current_default_background);
                         continue;
+
+                    // Special case - use for testing
+                    case 'h':
+                        kprinti(currv, 10, current_default_foreground, current_default_background);
+                        continue;
+                    case 'q':
+                        kprintu((uint32_t) text_cursor, 16, current_default_foreground, current_default_background);
+                        continue;
+
                 }
         }
         kprintc(*p, current_default_foreground, current_default_background);

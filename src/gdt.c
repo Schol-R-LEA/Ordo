@@ -65,7 +65,7 @@ void reset_gdt()
     set_gdt_entry(++entry, 0x08ffff, 0, false, true, RING_3);
 
 
-    for (uint32_t i = 0; i < 32; i++)
+    for (uint32_t i = 0; i < 6; i++)
     {
         kprintf("%d: ", i);
         print_gdt_entry(&gdt[i]);
