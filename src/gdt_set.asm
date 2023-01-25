@@ -1,11 +1,5 @@
-   global set_gdt
+
    global reload_segments
-
-
-; set_gdt(gdt_r) takes a pointer to the GDTR structure
-set_gdt:
-        lgdt [esp + 4]
-        ret
 
 
 %define system_code_selector (1 << 3)

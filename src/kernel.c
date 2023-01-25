@@ -22,7 +22,7 @@ void kernel_main()
     kprintf("Moving the memory map\n");
 
     memcpy(boot_data, _boot_data, sizeof(struct kdata));
-    print_mmap(boot_data->mmap_cnt, boot_data->mem_table);
+
 
     init_default_interrupts();
 
@@ -30,9 +30,10 @@ void kernel_main()
     reset_gdt();
 //    reset_default_paging(boot_data->mmap_cnt, boot_data->mem_table);
 
+    print_mmap(boot_data->mmap_cnt, boot_data->mem_table);
 
     init_default_interrupts();
-//    enable_interrupts();
+    // enable_interrupts();
 
 //    init_acpi();
 

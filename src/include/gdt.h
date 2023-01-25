@@ -62,8 +62,6 @@ union GDT_Entry
 
 extern union GDT_Entry *gdt;
 
-
-extern void set_gdt(struct GDT_R *gdt_r);
 extern void reload_segments();
 
 void reset_gdt();
