@@ -18,6 +18,6 @@ void print_mmap(uint32_t count, struct memory_map_entry table[]);
 
 void* memset(void *ptr,  char value, size_t num);
 void* memcpy(void *destination, void *source, size_t num);
-
+void memdump(void* src, uint32_t size);
 
 #endif

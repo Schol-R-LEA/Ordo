@@ -78,9 +78,9 @@ void reset_gdt()
     entry->fields.limit_and_flags.granularity = false;
 
     // user code descriptor
-    set_gdt_entry(++entry, 0x0008ffff, 0, true, true, RING_3);
+    set_gdt_entry(++entry, 0x000fffff, 0, true, true, RING_3);
     // user data descriptor
-    set_gdt_entry(++entry, 0x0008ffff, 0, false, true, RING_3);
+    set_gdt_entry(++entry, 0x000fffff, 0, false, true, RING_3);
 
 
     print_gdt(gdt);

@@ -48,7 +48,7 @@ void* memset(void *ptr, char value, size_t num)
         *(p++) = value;
     }
 
-    return p;
+    return ptr;
 }
 
 
@@ -62,5 +62,72 @@ void* memcpy(void *destination, void *source, size_t num)
         *(dest++) = *(src++);
     }
 
-    return dest;
+    return destination;
+}
+
+
+
+#define LINE_SIZE 16
+
+void dump_line(void* src, uint8_t size)
+{
+    uint8_t* p = (uint8_t *) src;
+
+    for (uint8_t i= 0, *b = p; i < size; i++, b++)
+    {
+        if (i == (LINE_SIZE / 2))
+        {
+            kprintf("\t");
+        }
+        if (*b < 0x10)
+        {
+            kprintf("0");
+        }
+        kprintf("%x ", *b);
+    }
+    if (size < LINE_SIZE)
+    {
+        for (uint8_t i = 0; i < (LINE_SIZE - size); i++)
+        {
+            kprintf("   ");
+        }
+        if (size < (LINE_SIZE / 2))
+        {
+            kprintf("\t");
+        }
+    }
+
+    kprintf("\t");
+
+    for (uint8_t i = 0, *b = p; i < size; i++, b++)
+    {
+        if (i == LINE_SIZE / 2)
+        {
+            kprintc('-', GREEN, BLACK);
+        }
+        kprintf("%c", (*b < 'a' ? '.' : *b));
+    }
+
+    kprintf("\n");
+}
+
+
+void memdump(void* src, uint32_t size)
+{ 
+    uint8_t* p = (uint8_t *) src;
+    uint32_t remainder = size % LINE_SIZE;
+    uint32_t lines = size / LINE_SIZE;
+
+
+    for (uint32_t i = 0; i < lines; i++, p += LINE_SIZE)
+    {
+        dump_line(p, LINE_SIZE);
+    }
+
+    p += LINE_SIZE;
+    if (remainder != 0)
+    {
+        dump_line(p, remainder);
+    }
+
 }
