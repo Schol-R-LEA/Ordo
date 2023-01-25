@@ -5,6 +5,7 @@
 #include "mem.h"
 #include "paging.h"
 #include "gdt.h"
+#include "tss.h"
 #include "idt.h"
 #include "acpi.h"
 
@@ -21,22 +22,22 @@ void kernel_main()
     kprintf("Moving the memory map\n");
 
     memcpy(boot_data, _boot_data, sizeof(struct kdata));
+    print_mmap(boot_data->mmap_cnt, boot_data->mem_table);
 
     init_default_interrupts();
 
-    kprintf("Resetting GDT\n");
+    kprintf("\nResetting GDT");
     reset_gdt();
-  //  reset_default_paging(boot_data->mmap_cnt, boot_data->mem_table);
-
- //   print_mmap(boot_data->mmap_cnt, boot_data->mem_table);
-
-  //  init_default_interrupts();
-  //  enable_interrupts();
-
-  //  init_acpi();
+//    reset_default_paging(boot_data->mmap_cnt, boot_data->mem_table);
 
 
-  //  kprints("End of kernel services", BLACK, CYAN);
+    init_default_interrupts();
+//    enable_interrupts();
+
+//    init_acpi();
+
+
+    kprints("End of kernel services", BLACK, CYAN);
     panic();
 }
 

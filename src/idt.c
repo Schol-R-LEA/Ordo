@@ -5,9 +5,6 @@
 #include "terminal.h"
 
 
-extern struct Interrupt_Descriptor_32 *idt;
-
-
 void idt_set_descriptor(uint8_t vector, void isr(struct Interrupt_Frame*), enum PRIVILEGE_LEVEL dpl, enum IDT_gate_type gate_type)
 {
     struct Interrupt_Descriptor_32* descriptor = &idt[vector];

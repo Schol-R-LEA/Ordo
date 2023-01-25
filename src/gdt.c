@@ -3,12 +3,30 @@
 #include "tss.h"
 #include "terminal.h"
 
+
+
 void print_gdt_entry(union GDT_Entry *entry)
 {
     uint32_t limit = entry->fields.limit_low | (entry->fields.limit_and_flags.limit_high << 16);
-    uint32_t base = entry->fields.base_low | (entry->fields.base_mid << 16) | (entry->fields.base_high << 24);
+    uint32_t base  = entry->fields.base_low  | (entry->fields.base_mid << 16) | (entry->fields.base_high << 24);
 
-    kprintf("limit: %p, base: %p\n",  limit, base);
+    // uint8_t  flags  =   entry->fields.limit_and_flags.reserved
+    //                   | entry->fields.limit_and_flags.long_mode   << 1
+    //                   | entry->fields.limit_and_flags.bits_32     << 2
+    //                   | entry->fields.limit_and_flags.granularity << 3;
+    // uint8_t  access =   entry->fields.access.accessed
+    //                   | entry->fields.access.read_write           << 1
+    //                   | entry->fields.access.direction_conforming << 2
+    //                   | entry->fields.access.executable           << 3
+    //                   | entry->fields.access.non_sys              << 4
+    //                   | entry->fields.access.dpl                  << 5
+    //                   | entry->fields.access.present              << 7;
+
+    uint64_t access = (entry->raw_entry >> 40) & 0xff;
+    uint64_t flags  = (entry->raw_entry >> 52) & 0x0f;
+
+//    kprintf("%p %p     %x             %x        %l\n", limit, base, access, flags, entry->raw_entry);
+    kprintf("%p %p %l %l %l\n", limit, base, access, flags, entry->raw_entry);
 }
 
 
@@ -34,7 +52,6 @@ void set_gdt_entry(union GDT_Entry *entry, uint32_t limit, uint32_t base, bool e
     entry->fields.limit_and_flags.granularity = true; // always use page granularity
 
     entry->fields.base_high = base >> 24;             // get highest 8 bits of base
-
 }
 
 
@@ -50,24 +67,28 @@ void reset_gdt()
     // set the null GDT entry = redundant, but still worth doing
     entry->raw_entry = 0;
     // system code descriptor
-    set_gdt_entry(++entry, 0x0fffff, 0, true, true, RING_0);
+    set_gdt_entry(++entry, 0x000fffff, 0, true, true, RING_0);
     // system data descriptor
-    set_gdt_entry(++entry, 0x0fffff, 0, false, true, RING_0);
+    set_gdt_entry(++entry, 0x000fffff, 0, false, true, RING_0);
 
     // system TSS descriptor
-    kprintf("Default TSS location %p\n", default_tss);
-    set_gdt_entry(++entry, sizeof(struct TSS), (uint32_t) default_tss, false, true, RING_0);
+    kprintf("\nDefault TSS location %p\n", &default_tss);
+    set_gdt_entry(++entry, sizeof(struct TSS), (uint32_t) &default_tss, true, false, RING_0);
+    entry->fields.access.accessed = true;
     entry->fields.access.non_sys = false;
+    entry->fields.limit_and_flags.bits_32 = false;
+    entry->fields.limit_and_flags.granularity = false;
 
     // user code descriptor
-    set_gdt_entry(++entry, 0x08ffff, 0, true, true, RING_3);
+    set_gdt_entry(++entry, 0x0008ffff, 0, true, true, RING_3);
     // user data descriptor
-    set_gdt_entry(++entry, 0x08ffff, 0, false, true, RING_3);
+    set_gdt_entry(++entry, 0x0008ffff, 0, false, true, RING_3);
 
 
+    kprintf("\t  limit    base     access           flags            whole\n");
     for (uint32_t i = 0; i < 6; i++)
     {
-        kprintf("%d: ", i);
+        kprintf("%d:\t", i);
         print_gdt_entry(&gdt[i]);
     }
 

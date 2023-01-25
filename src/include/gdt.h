@@ -41,7 +41,7 @@ struct gdt_entry_fields
         bool non_sys:1;
         enum PRIVILEGE_LEVEL dpl:2;
         bool present:1;
-    } access;
+    }  __attribute__((packed)) access;
     struct
     {
         uint8_t limit_high:4;
@@ -49,16 +49,16 @@ struct gdt_entry_fields
         bool long_mode:1;
         bool bits_32:1;
         bool granularity:1;
-    } limit_and_flags;
+    }  __attribute__((packed)) limit_and_flags;
     uint8_t base_high;
-};
+} __attribute__((packed));
 
 
 union GDT_Entry
 {
     uint64_t raw_entry;
     struct gdt_entry_fields fields;
-};
+} __attribute__((packed));
 
 extern union GDT_Entry *gdt;
 

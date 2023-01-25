@@ -8,6 +8,9 @@
 #define EXCEPTIONS_SIZE 32
 
 
+extern struct Interrupt_Descriptor_32 *idt;
+
+
 enum IDT_gate_type: uint8_t
 {
     TASK_GATE = 0x05,

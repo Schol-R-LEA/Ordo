@@ -19,7 +19,7 @@ reload_segments:
 
         jmp system_code_selector:.reload_cs
     .reload_cs:
-        ; Reload data segment registers:
+        ; Reload data segment registers
         mov ax, system_data_selector
         mov ds, ax
         mov es, ax
