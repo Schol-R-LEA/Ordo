@@ -60,31 +60,31 @@ SECTIONS
 		tables_base = .;
 	}
 
-    .boot_data BLOCK(4K) : ALIGN (4K)
+    .boot_data : ALIGN (4K)
     {
         boot_data = .;
 		. = . + 8K;
     }
 
-	.gdt BLOCK(4K) : ALIGN (4K)
+	.gdt : ALIGN (4K)
 	{
 		gdt = .;
 		. = . + 64K;
 	}
 
-	.tss BLOCK(4K) : ALIGN(4K)
+	.tss : ALIGN(4K)
 	{
 		default_tss = .;
 		. = . + 4K;
 	}
 
-    .idt BLOCK(4K) : ALIGN(4K)
+    .idt : ALIGN(4K)
 	{
 		idt = .;
 		. = . + 4K;
 	}
 
-    .paging BLOCK(4K) : ALIGN(4K)
+    .paging : ALIGN(4K)
 	{
         page_directory = .;
         . = . + 4K;

@@ -59,7 +59,7 @@ void reset_gdt()
 
     union GDT_Entry *entry = gdt;
 
-    // first, clear the whole table
+    // first, clear the whole table'
     memset(entry, 0, GDT_SIZE);
 
     // set the null GDT entry = redundant, but still worth doing

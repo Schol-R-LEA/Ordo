@@ -22,8 +22,8 @@ void kernel_main()
 
     kprintf("Moving the memory map\n");
     memcpy(boot_data, _boot_data, sizeof(struct kdata));
-    kprintf("boot data address: %p, boot data table size: %d\n", &boot_data, boot_data->mmap_cnt);
-    kprintf("GDT %p\n", &gdt);
+    kprintf("\nboot data address: %p, boot data table size: %d\n", &boot_data, boot_data->mmap_cnt);
+    kprintf("GDT address: %p\n\n", &gdt);
     memdump(boot_data, 64);
 
     init_default_interrupts();
@@ -31,7 +31,8 @@ void kernel_main()
     kprintf("\nResetting GDT");
     reset_gdt();
 
-    kprintf("boot data address: %p, boot data table size: %d\n", &boot_data, boot_data->mmap_cnt);
+    kprintf("\nboot data address: %p, boot data table size: %d\n", &boot_data, boot_data->mmap_cnt);
+        kprintf("GDT address: %p\n\n", &gdt);
     memdump(boot_data, 64);
 //    reset_default_paging(boot_data->mmap_cnt, boot_data->mem_table);
 

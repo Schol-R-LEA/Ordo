@@ -60,7 +60,8 @@ union GDT_Entry
     struct gdt_entry_fields fields;
 } __attribute__((packed));
 
-extern union GDT_Entry *gdt;
+
+extern union GDT_Entry gdt[];
 
 extern void reload_segments();
 

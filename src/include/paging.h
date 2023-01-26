@@ -78,8 +78,8 @@ union Page_Table_Entry
 } __attribute__((aligned(8))) ;
 
 
-extern union Page_Directory_Entry* page_directory;
-extern union Page_Table_Entry* page_tables;
+extern union Page_Directory_Entry page_directory[];
+extern union Page_Table_Entry page_tables[];
 
 void set_page_directory_entry(union Page_Directory_Entry* entry, uint32_t address, bool page_size, bool rw, bool user, bool write_thru, bool no_caching);
 
