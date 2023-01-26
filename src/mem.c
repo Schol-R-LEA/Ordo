@@ -105,7 +105,7 @@ void dump_line(void* src, uint8_t size)
         {
             kprintc('-', GREEN, BLACK);
         }
-        kprintf("%c", (*b < 'a' ? '.' : *b));
+        kprintf("%c", ((*b < 'a' || *b > 0xf0) ? '.' : *b));
     }
 
     kprintf("\n");
@@ -129,5 +129,4 @@ void memdump(void* src, uint32_t size)
     {
         dump_line(p, remainder);
     }
-
 }

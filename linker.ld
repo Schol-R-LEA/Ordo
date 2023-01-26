@@ -66,7 +66,7 @@ SECTIONS
 		. = . + 8K;
     }
 
-	.gdt : ALIGN (4K)
+	.gdt BLOCK(4K) : ALIGN (4K)
 	{
 		gdt = .;
 		. = . + 64K;

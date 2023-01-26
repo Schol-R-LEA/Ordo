@@ -11,7 +11,7 @@ DISKSIZE = 1440
 CC=i686-elf-gcc
 LD=i686-elf-ld
 LINK_SCRIPT=linker.ld
-CFLAGS=-Wall -Werror -Wpedantic -std=c2x -ffreestanding
+CFLAGS=-Wall -Werror -Wpedantic -std=c2x -ffreestanding -ggdb
 C_SRC=src
 C_INCLUDES=-I $(C_SRC)/include
 OBJPATH=obj

@@ -83,7 +83,7 @@ void reset_gdt()
     set_gdt_entry(++entry, 0x000fffff, 0, false, true, RING_3);
 
 
-    print_gdt(gdt);
+    //print_gdt(gdt);
 
 
     // set the GDT register
