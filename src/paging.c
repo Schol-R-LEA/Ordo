@@ -8,7 +8,7 @@
 #include "port_io.h"
 
 
-void set_page_directory_entry(union Page_Directory_Entry* entry,
+void set_page_directory_entry(uint32_t index,
                               uint32_t address,
                               bool page_size, bool rw,
                               bool user, bool write_thru, bool no_caching)
@@ -19,58 +19,60 @@ void set_page_directory_entry(union Page_Directory_Entry* entry,
     if (page_size)
     {
 
-        entry->mpage_entry.present = true;
-        entry->mpage_entry.read_write = rw;
-        entry->mpage_entry.user = user;
-        entry->mpage_entry.write_thru = write_thru;
-        entry->mpage_entry.cache_disable = no_caching;
-        entry->mpage_entry.accessed = false;
-        entry->mpage_entry.dirty = false;
-        entry->mpage_entry.page_size = true;
-        entry->mpage_entry.global = false;
-        entry->mpage_entry.available = 0;
-        entry->mpage_entry.page_attribute_table = false;
-        entry->mpage_entry.address_hi = (address >> 20) & 0x1FF;
-        entry->mpage_entry.reserved = false;
-        entry->mpage_entry.address_lo = address & 0xFF;
+        page_directory[index].mpage_entry.present = true;
+        page_directory[index].mpage_entry.read_write = rw;
+        page_directory[index].mpage_entry.user = user;
+        page_directory[index].mpage_entry.write_thru = write_thru;
+        page_directory[index].mpage_entry.cache_disable = no_caching;
+        page_directory[index].mpage_entry.accessed = false;
+        page_directory[index].mpage_entry.dirty = false;
+        page_directory[index].mpage_entry.page_size = true;
+        page_directory[index].mpage_entry.global = false;
+        page_directory[index].mpage_entry.available = 0;
+        page_directory[index].mpage_entry.page_attribute_table = false;
+        page_directory[index].mpage_entry.address_hi = (address >> 20) & 0x1FF;
+        page_directory[index].mpage_entry.reserved = false;
+        page_directory[index].mpage_entry.address_lo = address & 0xFF;
     }
     else
     {
-        entry->kpage_entry.present = true;
-        entry->kpage_entry.read_write = rw;
-        entry->kpage_entry.user = user;
-        entry->kpage_entry.write_thru = write_thru;
-        entry->kpage_entry.cache_disable = no_caching;
-        entry->kpage_entry.accessed = false;
-        entry->kpage_entry.dirty = false;
-        entry->mpage_entry.page_size = false;
-        entry->kpage_entry.available = 0;
-        entry->kpage_entry.address = address & 0xFFFFF;
+        page_directory[index].kpage_entry.present = true;
+        page_directory[index].kpage_entry.read_write = rw;
+        page_directory[index].kpage_entry.user = user;
+        page_directory[index].kpage_entry.write_thru = write_thru;
+        page_directory[index].kpage_entry.cache_disable = no_caching;
+        page_directory[index].kpage_entry.accessed = false;
+        page_directory[index].kpage_entry.dirty = false;
+        page_directory[index].mpage_entry.page_size = false;
+        page_directory[index].kpage_entry.available = 0;
+        page_directory[index].kpage_entry.address = address & 0xFFFFF;
     }
 }
 
 
-void set_page_table_entry(union Page_Table_Entry* entry,
+void set_page_table_entry(uint32_t de,
+                          uint32_t te,
                           uint32_t address,
                           bool page_size, bool rw,
                           bool user, bool write_thru,
                           bool no_caching)
 {
-    // first, clear the entry
-    memset(entry, 0, sizeof(union Page_Table_Entry));
 
-    entry->fields.present = true;
-    entry->fields.read_write = rw;
-    entry->fields.user = user;
-    entry->fields.write_thru = write_thru;
-    entry->fields.cache_disable = no_caching;
-    entry->fields.accessed = false;
-    entry->fields.dirty = false;
-    entry->fields.page_size = page_size;
-    entry->fields.page_attribute_table = false;
-    entry->fields.global = false;
-    entry->fields.available = 0;
-    entry->fields.address = address;
+    uint16_t index = te + (de * PT_ENTRY_COUNT);
+    // kprintf("directory entry: %x:%x -> index: %x\n", de, te, index);
+
+    page_tables[index].fields.present = true;
+    page_tables[index].fields.read_write = rw;
+    page_tables[index].fields.user = user;
+    page_tables[index].fields.write_thru = write_thru;
+    page_tables[index].fields.cache_disable = no_caching;
+    page_tables[index].fields.accessed = false;
+    page_tables[index].fields.dirty = false;
+    page_tables[index].fields.page_size = page_size;
+    page_tables[index].fields.page_attribute_table = false;
+    page_tables[index].fields.global = false;
+    page_tables[index].fields.available = 0;
+    page_tables[index].fields.address = address;
 }
 
 
@@ -106,36 +108,25 @@ void set_page_block(uint32_t phys_address,
     kprintf("trailing block size : %x\n", trailing_block_size);
 
 
-    uint32_t pt_e = pe_start;
     size_t addr = phys_address;
-
     for (uint32_t pd_e = pd_start; pd_e < pe_end; pd_e++)
     {
-        set_page_directory_entry(&page_directory[pd_e],
+        set_page_directory_entry(pd_e,
                                  addr,
                                  page_size, rw,
                                  user, write_thru,
                                  no_caching);
 
 
-        for (; pt_e < PT_SIZE; pt_e++, addr += PAGE_SPAN)
+        for (uint32_t pt_e = pe_start; pt_e < PT_ENTRY_COUNT; pt_e++, addr += PAGE_SPAN)
         {
-            set_page_table_entry(&page_tables[pt_e + (pd_e * PAGE_SPAN)],
+            set_page_table_entry(pd_e,
+                                 pt_e,
                                  addr,
                                  page_size, rw,
                                  user, write_thru,
                                  no_caching);
         }
-    }
-
-    // finish the remaining page table entries
-    for (; pt_e < pe_end; pt_e++, addr += PAGE_SPAN)
-    {
-        set_page_table_entry(&page_tables[pt_e],
-                             addr,
-                             page_size, rw,
-                             user, write_thru,
-                             no_caching);
     }
 }
 
