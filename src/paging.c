@@ -83,12 +83,13 @@ void set_page_block(uint32_t phys_address,
                     bool no_caching)
 {
     // determine the page directory entry and page table entry
-    // corresponding to the physical address
+    // corresponding to the virtual address
     uint32_t pd_start = virt_address / PD_ENTRY_SPAN;
     uint32_t directory_offset = virt_address - (pd_start * PD_ENTRY_SPAN);
     uint32_t pe_start = directory_offset / PAGE_SPAN;
 
-
+    // determine the page directory entry and page table entry
+    // corresponding to the end of the block of memory
     uint32_t block_end = virt_address + block_size - 1;
     uint32_t pd_end = block_end / PD_ENTRY_SPAN;
     uint32_t trailing_block_size = block_size % PD_ENTRY_SPAN;
@@ -96,7 +97,7 @@ void set_page_block(uint32_t phys_address,
 
 
     kprintf("physical address: %p\n", phys_address);
-    kprintf("target address: %p, ", virt_address);
+    kprintf("virtual address: %p, ", virt_address);
     kprintf("page directory start: %x, ", pd_start);
     kprintf("page table start: %x\n", pe_start);
     kprintf("end address   : %p, ", block_end);
