@@ -9,40 +9,35 @@
 #include "idt.h"
 #include "acpi.h"
 
-extern struct kdata *boot_data;
+extern struct kdata boot_data;
+extern uint8_t _tables_base;
+uint8_t *tables_base;
 
 void kernel_main()
 {
     clear_screen();
     kprints("Starting Kernel...\n", CYAN, BLACK);
 
+    tables_base = &_tables_base;
+
     struct kdata* _boot_data = (struct kdata*) (KDATA_OFFSET - sizeof(struct kdata) - 16);
 
     set_fg(GRAY);
 
     kprintf("Moving the memory map\n");
-    memcpy(boot_data, _boot_data, sizeof(struct kdata));
-    kprintf("\nboot data address: %p, boot data table size: %d\n", &boot_data, boot_data->mmap_cnt);
-    kprintf("GDT address: %p\n\n", &gdt);
-    memdump(boot_data, 64);
+    memcpy(&boot_data, _boot_data, sizeof(struct kdata));
+    print_mmap(boot_data.mmap_cnt, boot_data.mem_table);
 
-    init_default_interrupts();
 
-    kprintf("\nResetting GDT");
+    kprintf("\nResetting GDT\n");
     reset_gdt();
 
-    kprintf("\nboot data address: %p, boot data table size: %d\n", &boot_data, boot_data->mmap_cnt);
-        kprintf("GDT address: %p\n\n", &gdt);
-    memdump(boot_data, 64);
-//    reset_default_paging(boot_data->mmap_cnt, boot_data->mem_table);
-
-
-    print_mmap(boot_data->mmap_cnt, boot_data->mem_table);
+    reset_default_paging(boot_data.mmap_cnt, boot_data.mem_table);
 
     init_default_interrupts();
-    // enable_interrupts();
+    enable_interrupts();
 
-//    init_acpi();
+    init_acpi();
 
 
     kprints("End of kernel services", BLACK, CYAN);

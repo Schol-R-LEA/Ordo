@@ -57,7 +57,7 @@ SECTIONS
 
     .tables :
 	{
-		tables_base = .;
+		_tables_base = .;
 	}
 
     .boot_data : ALIGN (4K)

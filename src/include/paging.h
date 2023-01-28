@@ -4,8 +4,17 @@
 #include "kernel.h"
 #include "mem.h"
 
-#define PD_SIZE 0x0400
-#define PT_SIZE 0x0400
+#define PD_ENTRY_COUNT 0x0400
+#define PT_ENTRY_COUNT 0x0400
+#define PT_ENTRY_TOTAL_COUNT (PD_ENTRY_COUNT * PT_ENTRY_COUNT)
+
+
+#define PAGE_SPAN 0x1000
+#define PD_ENTRY_SPAN (PT_ENTRY_COUNT * PAGE_SPAN)
+
+#define PD_SIZE (PD_ENTRY_COUNT * sizeof(union Page_Directory_Entry))
+#define PT_SIZE (PT_ENTRY_TOTAL_COUNT * sizeof(union Page_Table_Entry))
+
 
 #define LOW_MEMORY_PAGE_COUNT (0x100000 / PT_SIZE)
 #define KERNEL_BASE_PAGE (KERNEL_BASE / PT_SIZE)
@@ -13,7 +22,6 @@
 
 struct Page_Directory_Entry_kilobyte
 {
-
     bool present:1;
     bool read_write:1;
     bool user:1;
@@ -78,8 +86,8 @@ union Page_Table_Entry
 } __attribute__((aligned(8))) ;
 
 
-extern union Page_Directory_Entry page_directory[];
-extern union Page_Table_Entry page_tables[];
+extern union Page_Directory_Entry page_directory[PD_ENTRY_COUNT];
+extern union Page_Table_Entry page_tables[PT_ENTRY_TOTAL_COUNT];
 
 void set_page_directory_entry(union Page_Directory_Entry* entry, uint32_t address, bool page_size, bool rw, bool user, bool write_thru, bool no_caching);
 

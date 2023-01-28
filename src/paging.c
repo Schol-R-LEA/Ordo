@@ -19,7 +19,7 @@ void set_page_directory_entry(union Page_Directory_Entry* entry,
     if (page_size)
     {
 
-        entry->mpage_entry.present = 1;
+        entry->mpage_entry.present = true;
         entry->mpage_entry.read_write = rw;
         entry->mpage_entry.user = user;
         entry->mpage_entry.write_thru = write_thru;
@@ -36,7 +36,7 @@ void set_page_directory_entry(union Page_Directory_Entry* entry,
     }
     else
     {
-        entry->kpage_entry.present = 1;
+        entry->kpage_entry.present = true;
         entry->kpage_entry.read_write = rw;
         entry->kpage_entry.user = user;
         entry->kpage_entry.write_thru = write_thru;
@@ -74,33 +74,57 @@ void set_page_table_entry(union Page_Table_Entry* entry,
 }
 
 
-/* set a block of page directory and page table entries to a common set of values */
-void set_page_block(uint32_t start_page,
-                    uint32_t address,
+/* set a block of page directory and page table entries matching a block of memory */
+void set_page_block(size_t phys_address,
+                    size_t virt_address,
+                    size_t block_size,
                     bool page_size, bool rw,
                     bool user, bool write_thru,
-                    bool no_caching,
-                    size_t page_count)
+                    bool no_caching)
 {
-    uint16_t pde_count = (page_count / PD_SIZE) + 1;
-    uint16_t remaining_pte_count = (page_count % PD_SIZE);
+    // determine the page directory entry and page table entry
+    // corresponding to the physical address
+    uint16_t pd_remainder = virt_address % PD_ENTRY_SPAN;
+    uint16_t pd_start = virt_address / PD_ENTRY_SPAN + (pd_remainder > 0) ? 1 : 0;
+    uint16_t pe_start = virt_address % PAGE_SPAN;
 
-    uint32_t dir_addr = address;
-    uint32_t pd_start = start_page / PD_SIZE;
+    size_t block_end = virt_address + block_size - 1;
+    uint16_t pe_remainder = block_end % PAGE_SPAN;
+    uint16_t pd_end = block_end / PD_ENTRY_SPAN + (pe_remainder > 0) ? 1 : 0;
+    uint16_t pe_end = block_end % PAGE_SPAN;
 
-    for (uint32_t pd_e = pd_start; pd_e < pde_count; pd_e++, dir_addr += PD_SIZE)
+    kprintf("target address: %p, ", virt_address);
+    kprintf("page directory start: %x, ", pd_start);
+    kprintf("page table start: %x\n", pe_start);
+    kprintf("end address   : %p, ", block_end);
+    kprintf("page directory end: %x, ", pd_end);
+    kprintf("page table end: %x\n", pe_end);
+
+
+/*     // calculate the total number of page table entries required
+    // to fit the require amount of memory
+    uint16_t remaining_memory = block_size % PT_SIZE;
+    uint16_t pte_count = (block_size / ) + (remaining_memory > 0) ? 1 : 0;
+
+    // calculate the total page directory entries required
+    // to represent the required amount of pages
+    uint16_t remaining_pte_count = page_count % PD_SIZE;
+    uint16_t pde_count = (pte_count / PD_ENTRY_COUNT) + (remaining_pte_count > 0) ? 1 : 0;
+
+
+    for (uint16_t pd_e = pd_start; pd_e < pde_count; pd_e++, dir_entry += PD_SIZE)
     {
         set_page_directory_entry(&page_directory[pd_e],
-                                 dir_addr,
+                                 dir_entry,
                                  page_size, rw,
                                  user, write_thru,
                                  no_caching);
 
-        uint32_t page_addr = dir_addr;
-        for (uint32_t pt_e = 0; pt_e < PT_SIZE; pt_e++, page_addr += PT_SIZE)
+        uint32_t page_entry = dir_entry;
+        for (uint32_t pt_e = 0; pt_e < PT_SIZE; pt_e++, page_entry += PT_SIZE)
         {
             set_page_table_entry(&page_tables[pd_e + pt_e],
-                                 page_addr,
+                                 page_entry,
                                  page_size, rw,
                                  user, write_thru,
                                  no_caching);
@@ -108,15 +132,15 @@ void set_page_block(uint32_t start_page,
     }
 
     // finish the remaining page table entries
-    uint32_t remaining_page_addr = dir_addr;
-    for (uint32_t pt_e = 0; pt_e < remaining_pte_count; pt_e++, remaining_page_addr += PT_SIZE)
+    uint32_t remaining_page_entry = dir_entry;
+    for (uint32_t pt_e = 0; pt_e < remaining_pte_count; pt_e++, remaining_page_entry += PT_SIZE)
     {
         set_page_table_entry(&page_tables[pde_count - 1 + pt_e],
-                             remaining_page_addr,
+                             remaining_page_entry,
                              page_size, rw,
                              user, write_thru,
                              no_caching);
-    }
+    } */
 }
 
 
@@ -124,26 +148,36 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
 {
     kprintf("Clearing page directory at %p\n", page_directory);
     // first, set all of the page directory entries to a default state
-    memset(page_directory, 0, 0x1000);
+    memset(page_directory, 0, PD_SIZE);
 
     kprintf("Clearing page tables starting at %p\n", page_tables);
     // do the same for all of the page table entries
-    memset(page_tables, 0, 0x400000);
+    memset(page_tables, 0, PT_SIZE);
 
     // next, identity map the first 1MiB
-    set_page_block(0, 0, false, true, false, false, false, 0x100000 / PT_SIZE);
-    // map in the kernel region
-    set_page_block(KERNEL_BASE / PD_SIZE, KERNEL_BASE, false, true, false, false, false, KERNEL_BASE / PT_SIZE);
+    set_page_block(0, 0, 0x100000, false, true, false, false, false);
 
+    // map in the kernel region
+    set_page_block(0x00100000, KERNEL_BASE, 0x100000, false, true, false, false, false);
+
+    // map in the various tables
+    set_page_block(0x00200000, (size_t) tables_base, 0x1600000, false, true, false, false, false);
+
+
+
+/*     // reset the paging address control register
+    // to point to the new page directory
     __asm__ __volatile__ (
     "    mov %0, %%cr3"
     :
     : "a" (page_directory)
     );
 
-/*     __asm__ __volatile__ (
-    "    mov %cr0, %%eax"
-    "    or $0x80000000, %%eax"
-    "    mov %%eax, %cr0"
+    // confirm that the paging bit is set
+    // in the main control register
+    __asm__ __volatile__ (
+    "    mov %cr0, %eax;"
+    "    or $0x80000000, %eax;"
+    "    mov %eax, %cr0;"
     ); */
 }

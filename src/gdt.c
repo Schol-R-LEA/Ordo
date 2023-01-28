@@ -70,7 +70,7 @@ void reset_gdt()
     set_gdt_entry(++entry, 0x000fffff, 0, false, true, RING_0);
 
     // system TSS descriptor
-    kprintf("\nDefault TSS location %p\n", &default_tss);
+    // kprintf("\nDefault TSS location %p\n", &default_tss);
     set_gdt_entry(++entry, sizeof(struct TSS), (uint32_t) &default_tss, true, false, RING_0);
     entry->fields.access.accessed = true;
     entry->fields.access.non_sys = false;

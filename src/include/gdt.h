@@ -61,7 +61,7 @@ union GDT_Entry
 } __attribute__((packed));
 
 
-extern union GDT_Entry gdt[];
+extern union GDT_Entry gdt[MAX_GDT_ENTRIES];
 
 extern void reload_segments();
 
