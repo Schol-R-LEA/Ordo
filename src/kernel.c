@@ -34,10 +34,10 @@ void kernel_main()
 
     reset_default_paging(boot_data.mmap_cnt, boot_data.mem_table);
 
-    init_default_interrupts();
+/*     init_default_interrupts();
     enable_interrupts();
 
-    init_acpi();
+    init_acpi(); */
 
 
     kprints("End of kernel services", BLACK, CYAN);

@@ -75,9 +75,9 @@ void set_page_table_entry(union Page_Table_Entry* entry,
 
 
 /* set a block of page directory and page table entries matching a block of memory */
-void set_page_block(size_t phys_address,
-                    size_t virt_address,
-                    size_t block_size,
+void set_page_block(uint32_t phys_address,
+                    uint32_t virt_address,
+                    uint32_t block_size,
                     bool page_size, bool rw,
                     bool user, bool write_thru,
                     bool no_caching)
@@ -86,14 +86,13 @@ void set_page_block(size_t phys_address,
     // corresponding to the physical address
     uint32_t pd_start = virt_address / PD_ENTRY_SPAN;
     uint32_t directory_offset = virt_address - (pd_start * PD_ENTRY_SPAN);
-    uint32_t pe_start = (directory_offset / PAGE_SPAN);
+    uint32_t pe_start = directory_offset / PAGE_SPAN;
 
-    //uint32_t total_pages = virt_address / PAGE_SPAN;
 
-    size_t block_end = virt_address + block_size - 1;
-    uint32_t pd_remainder = block_end % PD_ENTRY_SPAN;
-    uint32_t pd_end = (block_end / PD_ENTRY_SPAN) + ((pd_remainder > 0) ? 1 : 0);;
-    uint32_t pe_end = (block_size % PAGE_SPAN) + pe_start;
+    uint32_t block_end = virt_address + block_size - 1;
+    uint32_t pd_end = block_end / PD_ENTRY_SPAN;
+    uint32_t trailing_block_size = block_size % PD_ENTRY_SPAN;
+    uint32_t pe_end = pe_start + (trailing_block_size / PAGE_SPAN) - 1;
 
 
     kprintf("physical address: %p\n", phys_address);
@@ -103,32 +102,25 @@ void set_page_block(size_t phys_address,
     kprintf("end address   : %p, ", block_end);
     kprintf("page directory end  : %x, ", pd_end);
     kprintf("page table end  : %x\n", pe_end);
+    kprintf("trailing block size : %x\n", trailing_block_size);
 
 
-/*     // calculate the total number of page table entries required
-    // to fit the require amount of memory
-    uint16_t remaining_memory = block_size % PT_SIZE;
-    uint16_t pte_count = (block_size / ) + (remaining_memory > 0) ? 1 : 0;
+    uint32_t pt_e = pe_start;
+    size_t addr = phys_address;
 
-    // calculate the total page directory entries required
-    // to represent the required amount of pages
-    uint16_t remaining_pte_count = page_count % PD_SIZE;
-    uint16_t pde_count = (pte_count / PD_ENTRY_COUNT) + (remaining_pte_count > 0) ? 1 : 0;
-
-
-    for (uint16_t pd_e = pd_start; pd_e < pde_count; pd_e++, dir_entry += PD_SIZE)
+    for (uint32_t pd_e = pd_start; pd_e < pe_end; pd_e++)
     {
         set_page_directory_entry(&page_directory[pd_e],
-                                 dir_entry,
+                                 addr,
                                  page_size, rw,
                                  user, write_thru,
                                  no_caching);
 
-        uint32_t page_entry = dir_entry;
-        for (uint32_t pt_e = 0; pt_e < PT_SIZE; pt_e++, page_entry += PT_SIZE)
+
+        for (; pt_e < PT_SIZE; pt_e++, addr += PAGE_SPAN)
         {
-            set_page_table_entry(&page_tables[pd_e + pt_e],
-                                 page_entry,
+            set_page_table_entry(&page_tables[pt_e + (pd_e * PAGE_SPAN)],
+                                 addr,
                                  page_size, rw,
                                  user, write_thru,
                                  no_caching);
@@ -136,15 +128,14 @@ void set_page_block(size_t phys_address,
     }
 
     // finish the remaining page table entries
-    uint32_t remaining_page_entry = dir_entry;
-    for (uint32_t pt_e = 0; pt_e < remaining_pte_count; pt_e++, remaining_page_entry += PT_SIZE)
+    for (; pt_e < pe_end; pt_e++, addr += PAGE_SPAN)
     {
-        set_page_table_entry(&page_tables[pde_count - 1 + pt_e],
-                             remaining_page_entry,
+        set_page_table_entry(&page_tables[pt_e],
+                             addr,
                              page_size, rw,
                              user, write_thru,
                              no_caching);
-    } */
+    }
 }
 
 
@@ -165,10 +156,10 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
     set_page_block(0x00100000, KERNEL_BASE, 0x100000, false, true, false, false, false);
 
     // map in the various tables
-    set_page_block(0x00400000, (size_t) tables_base, 0x1000000, false, true, false, false, false);
+    set_page_block(0x00400000, (size_t) tables_base, 0x0C00000, false, true, false, false, false);
 
     // map in the stack
-    set_page_block(0x01000000, (size_t) &kernel_stack_base, 0x4000, false, true, false, false, false);
+    set_page_block(0x01500000, (size_t) &kernel_stack_base, 0x4000, false, true, false, false, false);
 
 
 /*     // reset the paging address control register

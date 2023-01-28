@@ -16,9 +16,6 @@
 #define PT_SIZE (PT_ENTRY_TOTAL_COUNT * sizeof(union Page_Table_Entry))
 
 
-#define LOW_MEMORY_PAGE_COUNT (0x100000 / PT_SIZE)
-
-
 struct Page_Directory_Entry_kilobyte
 {
     bool present:1;
