@@ -17,8 +17,7 @@
 
 
 #define LOW_MEMORY_PAGE_COUNT (0x100000 / PT_SIZE)
-#define KERNEL_BASE_PAGE (KERNEL_BASE / PT_SIZE)
-#define KERNEL_PAGE_COUNT (KERNEL_BASE / PT_SIZE)
+
 
 struct Page_Directory_Entry_kilobyte
 {

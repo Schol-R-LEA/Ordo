@@ -28,6 +28,7 @@ enum PRIVILEGE_LEVEL
 };
 
 extern uint8_t *tables_base;
+extern uint32_t kernel_stack_base;
 
 static inline void panic()
 {

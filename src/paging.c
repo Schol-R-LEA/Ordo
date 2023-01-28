@@ -84,21 +84,25 @@ void set_page_block(size_t phys_address,
 {
     // determine the page directory entry and page table entry
     // corresponding to the physical address
-    uint16_t pd_remainder = virt_address % PD_ENTRY_SPAN;
-    uint16_t pd_start = virt_address / PD_ENTRY_SPAN + (pd_remainder > 0) ? 1 : 0;
-    uint16_t pe_start = virt_address % PAGE_SPAN;
+    uint32_t pd_start = virt_address / PD_ENTRY_SPAN;
+    uint32_t directory_offset = virt_address - (pd_start * PD_ENTRY_SPAN);
+    uint32_t pe_start = (directory_offset / PAGE_SPAN);
+
+    //uint32_t total_pages = virt_address / PAGE_SPAN;
 
     size_t block_end = virt_address + block_size - 1;
-    uint16_t pe_remainder = block_end % PAGE_SPAN;
-    uint16_t pd_end = block_end / PD_ENTRY_SPAN + (pe_remainder > 0) ? 1 : 0;
-    uint16_t pe_end = block_end % PAGE_SPAN;
+    uint32_t pd_remainder = block_end % PD_ENTRY_SPAN;
+    uint32_t pd_end = (block_end / PD_ENTRY_SPAN) + ((pd_remainder > 0) ? 1 : 0);;
+    uint32_t pe_end = (block_size % PAGE_SPAN) + pe_start;
 
+
+    kprintf("physical address: %p\n", phys_address);
     kprintf("target address: %p, ", virt_address);
     kprintf("page directory start: %x, ", pd_start);
     kprintf("page table start: %x\n", pe_start);
     kprintf("end address   : %p, ", block_end);
-    kprintf("page directory end: %x, ", pd_end);
-    kprintf("page table end: %x\n", pe_end);
+    kprintf("page directory end  : %x, ", pd_end);
+    kprintf("page table end  : %x\n", pe_end);
 
 
 /*     // calculate the total number of page table entries required
@@ -161,8 +165,10 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
     set_page_block(0x00100000, KERNEL_BASE, 0x100000, false, true, false, false, false);
 
     // map in the various tables
-    set_page_block(0x00200000, (size_t) tables_base, 0x1600000, false, true, false, false, false);
+    set_page_block(0x00400000, (size_t) tables_base, 0x1000000, false, true, false, false, false);
 
+    // map in the stack
+    set_page_block(0x01000000, (size_t) &kernel_stack_base, 0x4000, false, true, false, false, false);
 
 
 /*     // reset the paging address control register
