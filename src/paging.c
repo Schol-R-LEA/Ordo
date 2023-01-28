@@ -43,7 +43,7 @@ void set_page_directory_entry(uint32_t index,
         page_directory[index].kpage_entry.cache_disable = no_caching;
         page_directory[index].kpage_entry.accessed = false;
         page_directory[index].kpage_entry.dirty = false;
-        page_directory[index].mpage_entry.page_size = false;
+        page_directory[index].kpage_entry.page_size = false;
         page_directory[index].kpage_entry.available = 0;
         page_directory[index].kpage_entry.address = address & 0xFFFFF;
     }
@@ -109,7 +109,7 @@ void set_page_block(uint32_t phys_address,
 
 
     size_t addr = phys_address;
-    for (uint32_t pd_e = pd_start; pd_e < pe_end; pd_e++)
+    for (uint32_t pd_e = pd_start; pd_e < pd_end; pd_e++)
     {
         set_page_directory_entry(pd_e,
                                  addr,
@@ -142,16 +142,16 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
     memset(page_tables, 0, PT_SIZE);
 
     // next, identity map the first 1MiB
-    set_page_block(0, 0, 0x100000, false, true, false, false, false);
+    set_page_block(0, 0, 0x00100000, false, true, false, false, false);
 
     // map in the kernel region
-    set_page_block(0x00100000, KERNEL_BASE, 0x100000, false, true, false, false, false);
+    set_page_block(0x00100000, KERNEL_BASE, 0x00100000, false, true, false, false, false);
 
     // map in the various tables
-    set_page_block(0x00400000, (size_t) tables_base, 0x0C00000, false, true, false, false, false);
+    set_page_block(0x00400000, (size_t) tables_base, 0x01000000, false, true, false, false, false);
 
     // map in the stack
-    set_page_block(0x01500000, (size_t) &kernel_stack_base, 0x4000, false, true, false, false, false);
+    set_page_block(0x01400000, (size_t) &kernel_stack_base, 0x4000, false, true, false, false, false);
 
 
 /*     // reset the paging address control register
