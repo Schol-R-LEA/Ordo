@@ -85,9 +85,9 @@ union Page_Table_Entry
 extern union Page_Directory_Entry page_directory[PD_ENTRY_COUNT];
 extern union Page_Table_Entry page_tables[PT_ENTRY_TOTAL_COUNT];
 
-void set_page_directory_entry(uint32_t index, uint32_t address, bool page_size, bool rw, bool user, bool write_thru, bool no_caching);
+void set_page_directory_entry(uint32_t index, size_t pe_address, bool page_size, bool rw, bool user, bool write_thru, bool no_caching);
 
-void set_page_table_entry(uint32_t de, uint32_t te, uint32_t address, bool page_size, bool rw, bool user, bool write_thru, bool no_caching);
+void set_page_table_entry(uint32_t de, uint32_t te, size_t address, bool page_size, bool rw, bool user, bool write_thru, bool no_caching);
 
 
 void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE]);
