@@ -161,45 +161,45 @@ void set_page_block(uint32_t phys_address,
 void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE])
 {
     size_t* kernel_physical_base = (size_t *) 0x00100000;
-    page_tables = (union Page_Table_Entry *) 0x00400000;
-    page_directory = (union Page_Directory_Entry *) 0x01400000;
-    size_t* kernel_stack_physical_base = (size_t *) 0x01401000;
-    size_t* tables_physical_base = (size_t *) 0x01800000;
+    size_t kernel_size = 0x00300000;                             // 3 MiB
+    page_tables = (union Page_Table_Entry *) ((size_t) kernel_physical_base + kernel_size);
+    size_t page_table_size = 0x01000000;                         // 16 MiB
+    page_directory = (union Page_Directory_Entry *) ((size_t) page_tables + page_table_size);
+    size_t page_directory_size = 0x000001000;                    // 4 KiB
+    size_t* kernel_stack_physical_base = (size_t *) ((size_t) page_directory + page_directory_size);
+    size_t kernel_stack_size = 0x00004000;                       // 16 KiB
+    size_t* tables_physical_base = (size_t *) ((size_t) page_directory + 0x00400000);
+    size_t tables_size = 0x00400000;
 
-    // first, set all of the page directory entries to a default state
-    //memset(&page_directory[0], 0, PD_SIZE);
-
-    // do the same for all of the page table entries
-    //memset(&page_tables[0], 0, PT_SIZE);
 
     // identity map the first 1MiB
     set_page_block(0, 0, 0x00100000, false, true, false, false, false);
 
     // identity map the kernel
-    set_page_block((size_t) kernel_physical_base, (size_t) kernel_physical_base, 0x00300000, false, true, false, false, false);
+    set_page_block((size_t) kernel_physical_base, (size_t) kernel_physical_base, kernel_size, false, true, false, false, false);
 
     // identity map the section for the page directory and page tables
     // these need to have physical addresses, not virtual ones
-    set_page_block((size_t) page_tables, (size_t) page_tables, 0x01000000, false, true, false, false, false);
-    set_page_block((size_t) page_directory, (size_t) page_directory, 0x00000400, false, true, false, false, false);
+    set_page_block((size_t) page_tables, (size_t) page_tables, page_table_size, false, true, false, false, false);
+    set_page_block((size_t) page_directory, (size_t) page_directory, page_directory_size, false, true, false, false, false);
 
     // identity map in the stack
-    set_page_block((size_t) kernel_stack_physical_base, (size_t) kernel_stack_physical_base, 0x4000, false, true, false, false, false);
+    set_page_block((size_t) kernel_stack_physical_base, (size_t) kernel_stack_physical_base, kernel_stack_size, false, true, false, false, false);
 
     // map in the kernel region
-    set_page_block((size_t) kernel_physical_base, (size_t) &kernel_base, 0x00300000, false, true, false, false, false);
+    set_page_block((size_t) kernel_physical_base, (size_t) &kernel_base, kernel_size, false, true, false, false, false);
 
     // map in the other various tables
     // provision 4MiB for these just to cover future needs
-    set_page_block((size_t) tables_physical_base, (size_t) &tables_base, 0x00400000, false, true, false, false, false);
+    set_page_block((size_t) tables_physical_base, (size_t) &tables_base, tables_size, false, true, false, false, false);
 
     // map in the stack
-    set_page_block((size_t) kernel_stack_physical_base, (size_t) &kernel_stack_base, 0x4000, false, true, false, false, false);
+    set_page_block((size_t) kernel_stack_physical_base, (size_t) &kernel_stack_base, kernel_stack_size, false, true, false, false, false);
 
 
     // reset the paging address control register
     // to point to the new page directory
-    __asm__ __volatile__ (
+     __asm__ __volatile__ (
     "    mov %0, %%cr3"
     :
     : "a" (page_directory)
