@@ -147,14 +147,20 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
     // do the same for all of the page table entries
     memset(&page_tables[0], 0, PT_SIZE);
 
-    // next, identity map the first 1MiB
+    // identity map the first 1MiB
     set_page_block(0, 0, 0x00100000, false, true, false, false, false);
 
-    // map in the kernel region
-    set_page_block(0x00100000, KERNEL_BASE, 0x00100000, false, true, false, false, false);
+    // identity map the section for the page directory and page tables
+    // these need to have physical addresses, not virtual ones
+    set_page_block((size_t) &page_directory, (size_t) &page_directory, 0x00000400, false, true, false, false, false);
+    set_page_block((size_t) &page_tables, (size_t) &page_tables, 0x00400000, false, true, false, false, false);
 
-    // map in the various tables
-    set_page_block(0x00400000, (size_t) tables_base, 0x00b00000, false, true, false, false, false);
+    // map in the kernel region
+    set_page_block(0x00100000, (size_t) &kernel_base, 0x00400000, false, true, false, false, false);
+
+    // map in the other various tables
+    // provision 4MiB for these just to cover future needs
+    set_page_block(0x00400000, (size_t) &tables_base, 0x00400000, false, true, false, false, false);
 
     // map in the stack
     set_page_block(0x01000000, (size_t) &kernel_stack_base, 0x4000, false, true, false, false, false);

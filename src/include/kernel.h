@@ -27,7 +27,8 @@ enum PRIVILEGE_LEVEL
     RING_0, RING_1, RING_2, RING_3
 };
 
-extern uint8_t *tables_base;
+extern uint32_t tables_base;
+extern uint32_t kernel_base;
 extern uint32_t kernel_stack_base;
 
 static inline void panic()
