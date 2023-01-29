@@ -82,8 +82,12 @@ union Page_Table_Entry
 } __attribute__((aligned(8))) ;
 
 
-extern union Page_Directory_Entry page_directory[PD_ENTRY_COUNT];
-extern union Page_Table_Entry page_tables[PT_ENTRY_TOTAL_COUNT];
+// extern union Page_Directory_Entry page_directory[PD_ENTRY_COUNT];
+// extern union Page_Table_Entry page_tables[PT_ENTRY_TOTAL_COUNT];
+
+
+extern union Page_Table_Entry *page_tables;
+extern union Page_Directory_Entry *page_directory;
 
 void set_page_directory_entry(uint32_t index, size_t pe_address, bool page_size, bool rw, bool user, bool write_thru, bool no_caching);
 

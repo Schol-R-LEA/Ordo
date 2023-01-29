@@ -25,9 +25,10 @@ STARTUP(obj/kstart.o)
 SECTIONS
 {
 	/* place the identity-mapped section for
-	   the page directory and page tables at the 6MiB
+	   the page directory and page tables at the 4MiB
 	   point in physical memory (i.e., past the
-	   1MiB low memory plus the 4MiB kernel space). */
+	   1MiB low memory plus the 3MiB kernel space). */
+    /*
     . = 0x000400000;
 
     .paging : ALIGN(4K)
@@ -36,7 +37,7 @@ SECTIONS
 		. = . + (4M);
 		page_directory = .;
         . = . + 4K;
-	}
+	} */
 
 
 	/* place the kernel at the start of the higher half */
