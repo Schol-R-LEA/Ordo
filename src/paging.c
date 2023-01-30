@@ -27,7 +27,7 @@ void set_page_directory_entry(uint32_t index,
     // clear the directory entry
     memset(&page_directory[index], 0, sizeof(union Page_Directory_Entry));
 
-    kprintf("directory index %x\n", index);
+    // kprintf("directory index %x\n", index);
 
     page_directory[index].fields.present = true;
     page_directory[index].fields.read_write = rw;
@@ -50,6 +50,8 @@ void set_page_table_entry(uint32_t de,
                           bool no_caching)
 {
     uint32_t index = te + (de * PT_ENTRY_COUNT);
+    size_t address_field = address >> 12;
+
 
     // SANITY CHECK - does this overrun the table?
     if (de > PD_ENTRY_COUNT)
@@ -76,11 +78,10 @@ void set_page_table_entry(uint32_t de,
     page_tables[index].fields.cache_disable = no_caching;
     page_tables[index].fields.accessed = false;
     page_tables[index].fields.dirty = false;
-    page_tables[index].fields.page_size = false;
     page_tables[index].fields.page_attribute_table = false;
     page_tables[index].fields.global = false;
     page_tables[index].fields.available = 0;
-    page_tables[index].fields.address = address >> 12;
+    page_tables[index].fields.address = address_field;
 }
 
 struct Page_Directory_Frame
@@ -152,6 +153,7 @@ void set_page_block(uint32_t phys_address,
     uint32_t pt_entry;
     size_t addr = phys_address;
 
+
     for (bool first_entry = true; pd_entry <= frame.dir_end; pd_entry++, first_entry = false)
     {
         // if this is the first iteration of the loop, use the computed page entry location, 
@@ -170,6 +172,8 @@ void set_page_block(uint32_t phys_address,
             panic();
         }
 
+        kprintf("Mapping PD entry %x to physical address: %x\n", pd_entry, addr);
+
         set_page_directory_entry(pd_entry,
                                  (size_t) &page_tables[pt_entry],
                                  rw, user,
@@ -179,6 +183,7 @@ void set_page_block(uint32_t phys_address,
 
         for (; pt_entry < pt_current_end; pt_entry++, addr += PAGE_SPAN)
         {
+
             set_page_table_entry(pd_entry,
                                  pt_entry,
                                  addr,
@@ -207,16 +212,10 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
     // identity map the first 1MiB
     set_page_block(0, 0, 0x00100000, true, false, false, false);
 
-    // identity map the kernel
-    set_page_block((size_t) kernel_physical_base, (size_t) kernel_physical_base, kernel_size, true, false, false, false);
-
     // identity map the section for the page directory and page tables
     // these need to have physical addresses, not virtual ones
     set_page_block((size_t) page_tables, (size_t) page_tables, page_table_size,  true, false, false, false);
     set_page_block((size_t) page_directory, (size_t) page_directory, page_directory_size, true, false, false, false);
-
-    // identity map in the stack
-    set_page_block((size_t) kernel_stack_physical_base, (size_t) kernel_stack_physical_base, kernel_stack_size, true, false, false, false);
 
     // map in the kernel region
     set_page_block((size_t) kernel_physical_base, (size_t) &kernel_base, kernel_size, true, false, false, false);
@@ -229,6 +228,7 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
     set_page_block((size_t) kernel_stack_physical_base, (size_t) &kernel_stack_base, kernel_stack_size, true, false, false, false);
 
     kprintf("Resetting paging... ");
+
     // reset the paging address control register
     // to point to the new page directory
      __asm__ __volatile__ (

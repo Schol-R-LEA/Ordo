@@ -70,7 +70,7 @@ SECTIONS
 	}
 
     /* hardware tables */
-    . = 0xC0100000;
+    . = 0xC0400000;
 
     .tables :
 	{

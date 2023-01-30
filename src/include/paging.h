@@ -47,11 +47,10 @@ struct Page_Table_Entry_fields
         bool cache_disable:1;
         bool accessed:1;
         bool dirty:1;
-        bool page_size:1;
         bool page_attribute_table:1;
         bool global:1;
         uint8_t available:3;
-        uint32_t address:19;
+        uint32_t address:20;
 }__attribute__((packed));
 
 
