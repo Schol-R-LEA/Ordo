@@ -28,7 +28,7 @@ struct Page_Directory_Entry_kilobyte
     bool page_size:1;
     uint8_t available:4;
     uint32_t address:20;
-};
+}__attribute__((packed));
 
 
 struct Page_Directory_Entry_megabyte
@@ -47,7 +47,7 @@ struct Page_Directory_Entry_megabyte
     uint8_t address_hi:8;
     bool reserved:1;
     uint16_t address_lo:10;
-};
+}__attribute__((packed));
 
 
 union Page_Directory_Entry
@@ -55,7 +55,7 @@ union Page_Directory_Entry
     uint32_t raw_entry;
     struct Page_Directory_Entry_kilobyte kpage_entry;
     struct Page_Directory_Entry_megabyte mpage_entry;
-} __attribute__((aligned(8)));
+} __attribute__((aligned(0x1000), packed));
 
 
 struct Page_Table_Entry_fields
@@ -72,14 +72,14 @@ struct Page_Table_Entry_fields
         bool global:1;
         uint8_t available:3;
         uint32_t address:19;
-};
+}__attribute__((packed));
 
 
 union Page_Table_Entry
 {
     uint32_t raw_entry;
     struct Page_Table_Entry_fields fields;
-} __attribute__((aligned(8))) ;
+} __attribute__((aligned(0x1000), packed)) ;
 
 
 // extern union Page_Directory_Entry page_directory[PD_ENTRY_COUNT];
