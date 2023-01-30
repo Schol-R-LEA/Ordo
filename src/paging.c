@@ -14,8 +14,8 @@ union Page_Directory_Entry *page_directory;
 
 void set_page_directory_entry(uint32_t index,
                               size_t pte_address,
-                              bool page_size, bool rw,
-                              bool user, bool write_thru, bool no_caching)
+                              bool rw, bool user,
+                              bool write_thru, bool no_caching)
 {
     // SANITY CHECK - does this overrun the table?
     if (index > PD_ENTRY_COUNT)
@@ -29,45 +29,24 @@ void set_page_directory_entry(uint32_t index,
 
     kprintf("directory index %x\n", index);
 
-
-    if (page_size)
-    {
-        page_directory[index].mpage_entry.present = true;
-        page_directory[index].mpage_entry.read_write = rw;
-        page_directory[index].mpage_entry.user = user;
-        page_directory[index].mpage_entry.write_thru = write_thru;
-        page_directory[index].mpage_entry.cache_disable = no_caching;
-        page_directory[index].mpage_entry.accessed = false;
-        page_directory[index].mpage_entry.dirty = false;
-        page_directory[index].mpage_entry.page_size = true;
-        page_directory[index].mpage_entry.global = false;
-        page_directory[index].mpage_entry.available = 0;
-        page_directory[index].mpage_entry.page_attribute_table = false;
-        page_directory[index].mpage_entry.address_hi = (pte_address >> 20) & 0x1FF;
-        page_directory[index].mpage_entry.reserved = false;
-        page_directory[index].mpage_entry.address_lo = pte_address & 0xFF;
-    }
-    else
-    {
-        page_directory[index].kpage_entry.present = true;
-        page_directory[index].kpage_entry.read_write = rw;
-        page_directory[index].kpage_entry.user = user;
-        page_directory[index].kpage_entry.write_thru = write_thru;
-        page_directory[index].kpage_entry.cache_disable = no_caching;
-        page_directory[index].kpage_entry.accessed = false;
-        page_directory[index].kpage_entry.dirty = false;
-        page_directory[index].kpage_entry.page_size = false;
-        page_directory[index].kpage_entry.available = 0;
-        page_directory[index].kpage_entry.address = pte_address & 0xFFFFF;
-    }
+    page_directory[index].fields.present = true;
+    page_directory[index].fields.read_write = rw;
+    page_directory[index].fields.user = user;
+    page_directory[index].fields.write_thru = write_thru;
+    page_directory[index].fields.cache_disable = no_caching;
+    page_directory[index].fields.accessed = false;
+    page_directory[index].fields.dirty = false;
+    page_directory[index].fields.page_size = false;
+    page_directory[index].fields.available = 0;
+    page_directory[index].fields.address = pte_address >> 12;
 }
 
 
 void set_page_table_entry(uint32_t de,
                           uint32_t te,
                           size_t address,
-                          bool page_size, bool rw,
-                          bool user, bool write_thru,
+                          bool rw, bool user,
+                          bool write_thru,
                           bool no_caching)
 {
     uint32_t index = te + (de * PT_ENTRY_COUNT);
@@ -97,11 +76,11 @@ void set_page_table_entry(uint32_t de,
     page_tables[index].fields.cache_disable = no_caching;
     page_tables[index].fields.accessed = false;
     page_tables[index].fields.dirty = false;
-    page_tables[index].fields.page_size = page_size;
+    page_tables[index].fields.page_size = false;
     page_tables[index].fields.page_attribute_table = false;
     page_tables[index].fields.global = false;
     page_tables[index].fields.available = 0;
-    page_tables[index].fields.address = address;
+    page_tables[index].fields.address = address >> 12;
 }
 
 struct Page_Directory_Frame
@@ -123,19 +102,7 @@ struct Page_Directory_Frame* get_frame(struct Page_Directory_Frame *frame, size_
     // corresponding to the end of the block of memory
     uint32_t block_end = virt_address + block_size - 1;
     frame->dir_end = (block_end / PD_ENTRY_SPAN) + (trailing_directory ? 1 : 0);
-
-    //bool trailing_block_size = block_size % PD_ENTRY_SPAN;
-    //trailing_block_size = (trailing_block_size == block_size) ? 0 : trailing_block_size;
     frame->page_end = (frame->page_start + (block_size / PAGE_SPAN) - 1) % PT_ENTRY_COUNT;
-
-    // kprintf("virtual address: %p, ", virt_address);
-    // kprintf("trailing directory: %s\n", (trailing_directory) ? "yes" : "no");
-    // kprintf("page directory start: %x, ", frame->dir_start);
-    // kprintf("page table start: %x\n", frame->page_start);
-    // kprintf("end address   : %p, ", block_end);
-    // kprintf("page directory end  : %x, ", frame->dir_end);
-    // kprintf("page table end  : %x\n\n", frame->page_end);
-    // kprintf("trailing block %s, trailing block size : %x, trailing page %s\n", (trailing_block) ? "yes" : "no", trailing_block_size, (trailing_page) ? "yes" : "no");
 
     return frame;
 }
@@ -146,8 +113,8 @@ struct Page_Directory_Frame* get_frame(struct Page_Directory_Frame *frame, size_
 void set_page_block(uint32_t phys_address,
                     uint32_t virt_address,
                     uint32_t block_size,
-                    bool page_size, bool rw,
-                    bool user, bool write_thru,
+                    bool rw, bool user,
+                    bool write_thru,
                     bool no_caching)
 {
     struct Page_Directory_Frame frame;
@@ -205,8 +172,8 @@ void set_page_block(uint32_t phys_address,
 
         set_page_directory_entry(pd_entry,
                                  (size_t) &page_tables[pt_entry],
-                                 page_size, rw,
-                                 user, write_thru,
+                                 rw, user,
+                                 write_thru,
                                  no_caching);
 
 
@@ -215,8 +182,8 @@ void set_page_block(uint32_t phys_address,
             set_page_table_entry(pd_entry,
                                  pt_entry,
                                  addr,
-                                 page_size, rw,
-                                 user, write_thru,
+                                 rw, user,
+                                 write_thru,
                                  no_caching);
         }
     }
@@ -238,30 +205,30 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
 
 
     // identity map the first 1MiB
-    set_page_block(0, 0, 0x00100000, false, true, false, false, false);
+    set_page_block(0, 0, 0x00100000, true, false, false, false);
 
     // identity map the kernel
-    set_page_block((size_t) kernel_physical_base, (size_t) kernel_physical_base, kernel_size, false, true, false, false, false);
+    set_page_block((size_t) kernel_physical_base, (size_t) kernel_physical_base, kernel_size, true, false, false, false);
 
     // identity map the section for the page directory and page tables
     // these need to have physical addresses, not virtual ones
-    set_page_block((size_t) page_tables, (size_t) page_tables, page_table_size, false, true, false, false, false);
-    set_page_block((size_t) page_directory, (size_t) page_directory, page_directory_size, false, true, false, false, false);
+    set_page_block((size_t) page_tables, (size_t) page_tables, page_table_size,  true, false, false, false);
+    set_page_block((size_t) page_directory, (size_t) page_directory, page_directory_size, true, false, false, false);
 
     // identity map in the stack
-    set_page_block((size_t) kernel_stack_physical_base, (size_t) kernel_stack_physical_base, kernel_stack_size, false, true, false, false, false);
+    set_page_block((size_t) kernel_stack_physical_base, (size_t) kernel_stack_physical_base, kernel_stack_size, true, false, false, false);
 
     // map in the kernel region
-    set_page_block((size_t) kernel_physical_base, (size_t) &kernel_base, kernel_size, false, true, false, false, false);
+    set_page_block((size_t) kernel_physical_base, (size_t) &kernel_base, kernel_size, true, false, false, false);
 
     // map in the other various tables
     // provision 4MiB for these just to cover future needs
-    set_page_block((size_t) tables_physical_base, (size_t) &tables_base, tables_size, false, true, false, false, false);
+    set_page_block((size_t) tables_physical_base, (size_t) &tables_base, tables_size, true, false, false, false);
 
     // map in the stack
-    set_page_block((size_t) kernel_stack_physical_base, (size_t) &kernel_stack_base, kernel_stack_size, false, true, false, false, false);
+    set_page_block((size_t) kernel_stack_physical_base, (size_t) &kernel_stack_base, kernel_stack_size, true, false, false, false);
 
-
+    kprintf("Resetting paging... ");
     // reset the paging address control register
     // to point to the new page directory
      __asm__ __volatile__ (
@@ -271,16 +238,5 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
     : "memory"
     );
 
-    // confirm that the paging bit is set
-    // in the main control register
-    uint32_t temp;
-
-    __asm__ __volatile__ (
-    "    mov %%cr0, %0;"
-    "    or $0x80000000, %0;"
-    "    mov %0, %%cr0;"
-    : "=r"(temp)
-    :
-    : "memory"
-    );
+    kprintf("\nPaging reset\n");
 }

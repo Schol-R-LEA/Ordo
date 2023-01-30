@@ -26,8 +26,9 @@ void kernel_main()
     print_mmap(boot_data.mmap_cnt, boot_data.mem_table);
 
 
-    kprintf("\nResetting GDT\n");
+    kprintf("\nResetting GDT... ");
     reset_gdt();
+    kprintf("GDT reset\n");
 
     reset_default_paging(boot_data.mmap_cnt, boot_data.mem_table);
 
