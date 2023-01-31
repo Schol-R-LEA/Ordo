@@ -76,4 +76,16 @@ void set_page_table_entry(uint32_t de, uint32_t te, size_t address, bool rw, boo
 void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE]);
 
 
+inline static void page_reset()
+{
+    // reset the paging address control register
+    // to point to the new page directory
+     __asm__ __volatile__ (
+    "    mov %0, %%cr3"
+    :
+    : "a" (page_directory)
+    : "memory"
+    );
+}
+
 #endif

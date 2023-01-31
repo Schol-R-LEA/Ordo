@@ -13,7 +13,7 @@ union Page_Directory_Entry *page_directory;
 
 
 void set_page_directory_entry(uint32_t index,
-                              size_t pte_address,
+                              size_t pt_entry,
                               bool rw, bool user,
                               bool write_thru, bool no_caching)
 {
@@ -24,10 +24,14 @@ void set_page_directory_entry(uint32_t index,
         panic();
     }
 
+    size_t pte_address = (size_t) &page_tables[pt_entry + (index * PT_ENTRY_COUNT)];
+    size_t address_field = pte_address >> 12;
+
     // clear the directory entry
     memset(&page_directory[index], 0, sizeof(union Page_Directory_Entry));
 
-    // kprintf("directory index %x\n", index);
+    //kprintf("directory index %x, ", index);
+    //kprintf("Page table entry address: %p, mapped to %x\n", pte_address, address_field);
 
     page_directory[index].fields.present = true;
     page_directory[index].fields.read_write = rw;
@@ -38,7 +42,7 @@ void set_page_directory_entry(uint32_t index,
     page_directory[index].fields.dirty = false;
     page_directory[index].fields.page_size = false;
     page_directory[index].fields.available = 0;
-    page_directory[index].fields.address = pte_address >> 12;
+    page_directory[index].fields.address = address_field;
 }
 
 
@@ -69,7 +73,7 @@ void set_page_table_entry(uint32_t de,
     // first, clear the directory entry
     memset(&page_tables[index], 0, sizeof(union Page_Table_Entry));
 
-    // kprintf("Page dir:table = %x:%x -> index %x\n", de, te, index);
+    //kprintf("Page dir:table = %x:%x -> index %x, address field: %x\n", de, te, index, address_field);
 
     page_tables[index].fields.present = true;
     page_tables[index].fields.read_write = rw;
@@ -172,10 +176,10 @@ void set_page_block(uint32_t phys_address,
             panic();
         }
 
-        kprintf("Mapping PD entry %x to physical address: %x\n", pd_entry, addr);
+        //kprintf("Mapping PD entry %x to physical address: %p\n", pd_entry, addr);
 
         set_page_directory_entry(pd_entry,
-                                 (size_t) &page_tables[pt_entry],
+                                 pt_entry,
                                  rw, user,
                                  write_thru,
                                  no_caching);
@@ -183,7 +187,7 @@ void set_page_block(uint32_t phys_address,
 
         for (; pt_entry < pt_current_end; pt_entry++, addr += PAGE_SPAN)
         {
-
+            //kprintf("Mapping %x:%x to physical address: %p\n", pd_entry, pt_entry, addr);
             set_page_table_entry(pd_entry,
                                  pt_entry,
                                  addr,
@@ -212,10 +216,16 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
     // identity map the first 1MiB
     set_page_block(0, 0, 0x00100000, true, false, false, false);
 
+    // identity map the kernel region
+    set_page_block((size_t) kernel_physical_base, (size_t) kernel_physical_base, kernel_size, true, false, false, false);
+
     // identity map the section for the page directory and page tables
     // these need to have physical addresses, not virtual ones
     set_page_block((size_t) page_tables, (size_t) page_tables, page_table_size,  true, false, false, false);
     set_page_block((size_t) page_directory, (size_t) page_directory, page_directory_size, true, false, false, false);
+
+    // identity map the stack
+    set_page_block((size_t) kernel_stack_physical_base, (size_t) kernel_stack_physical_base, kernel_stack_size, true, false, false, false);
 
     // map in the kernel region
     set_page_block((size_t) kernel_physical_base, (size_t) &kernel_base, kernel_size, true, false, false, false);
@@ -227,16 +237,8 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
     // map in the stack
     set_page_block((size_t) kernel_stack_physical_base, (size_t) &kernel_stack_base, kernel_stack_size, true, false, false, false);
 
+
     kprintf("Resetting paging... ");
-
-    // reset the paging address control register
-    // to point to the new page directory
-     __asm__ __volatile__ (
-    "    mov %0, %%cr3"
-    :
-    : "a" (page_directory)
-    : "memory"
-    );
-
+    page_reset();
     kprintf("\nPaging reset\n");
 }
