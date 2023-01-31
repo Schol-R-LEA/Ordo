@@ -240,5 +240,5 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
 
     kprintf("Resetting paging... ");
     page_reset();
-    kprintf("\nPaging reset\n");
+    kprintf("Paging reset\n");
 }
