@@ -8,58 +8,72 @@
 #include "port_io.h"
 
 
+union Page_Table_Entry *page_tables;
+union Page_Directory_Entry *page_directory;
+
+
 void set_page_directory_entry(uint32_t index,
-                              size_t pte_address,
-                              bool page_size, bool rw,
-                              bool user, bool write_thru, bool no_caching)
+                              size_t pt_entry,
+                              bool rw, bool user,
+                              bool write_thru, bool no_caching)
 {
-    // first, clear the directory entry
+    // SANITY CHECK - does this overrun the table?
+    if (index > PD_ENTRY_COUNT)
+    {
+        kprintf("Invalid directory entry index: %x\n", index);
+        panic();
+    }
+
+    size_t pte_address = (size_t) &page_tables[pt_entry + (index * PT_ENTRY_COUNT)];
+    size_t address_field = pte_address >> 12;
+
+    // clear the directory entry
     memset(&page_directory[index], 0, sizeof(union Page_Directory_Entry));
 
-    if (page_size)
-    {
+    //kprintf("directory index %x, ", index);
+    //kprintf("Page table entry address: %p, mapped to %x\n", pte_address, address_field);
 
-        page_directory[index].mpage_entry.present = true;
-        page_directory[index].mpage_entry.read_write = rw;
-        page_directory[index].mpage_entry.user = user;
-        page_directory[index].mpage_entry.write_thru = write_thru;
-        page_directory[index].mpage_entry.cache_disable = no_caching;
-        page_directory[index].mpage_entry.accessed = false;
-        page_directory[index].mpage_entry.dirty = false;
-        page_directory[index].mpage_entry.page_size = true;
-        page_directory[index].mpage_entry.global = false;
-        page_directory[index].mpage_entry.available = 0;
-        page_directory[index].mpage_entry.page_attribute_table = false;
-        page_directory[index].mpage_entry.address_hi = (pte_address >> 20) & 0x1FF;
-        page_directory[index].mpage_entry.reserved = false;
-        page_directory[index].mpage_entry.address_lo = pte_address & 0xFF;
-    }
-    else
-    {
-        page_directory[index].kpage_entry.present = true;
-        page_directory[index].kpage_entry.read_write = rw;
-        page_directory[index].kpage_entry.user = user;
-        page_directory[index].kpage_entry.write_thru = write_thru;
-        page_directory[index].kpage_entry.cache_disable = no_caching;
-        page_directory[index].kpage_entry.accessed = false;
-        page_directory[index].kpage_entry.dirty = false;
-        page_directory[index].kpage_entry.page_size = false;
-        page_directory[index].kpage_entry.available = 0;
-        page_directory[index].kpage_entry.address = pte_address & 0xFFFFF;
-    }
+    page_directory[index].fields.present = true;
+    page_directory[index].fields.read_write = rw;
+    page_directory[index].fields.user = user;
+    page_directory[index].fields.write_thru = write_thru;
+    page_directory[index].fields.cache_disable = no_caching;
+    page_directory[index].fields.accessed = false;
+    page_directory[index].fields.dirty = false;
+    page_directory[index].fields.page_size = false;
+    page_directory[index].fields.available = 0;
+    page_directory[index].fields.address = address_field;
 }
 
 
 void set_page_table_entry(uint32_t de,
                           uint32_t te,
                           size_t address,
-                          bool page_size, bool rw,
-                          bool user, bool write_thru,
+                          bool rw, bool user,
+                          bool write_thru,
                           bool no_caching)
 {
-    uint16_t index = te + (de * PT_ENTRY_COUNT);
-    kprintf("Page dir:table = %x:%x -> index %x\n", de, te, index);
+    uint32_t index = te + (de * PT_ENTRY_COUNT);
+    size_t address_field = address >> 12;
 
+
+    // SANITY CHECK - does this overrun the table?
+    if (de > PD_ENTRY_COUNT)
+    {
+        kprintf("Invalid directory entry: %x\n", de);
+        panic();
+    }
+
+    if (index > (PT_ENTRY_COUNT * PD_ENTRY_COUNT))
+    {
+        kprintf("Invalid table entry index: %x\n", index);
+        panic();
+    }
+
+    // first, clear the directory entry
+    memset(&page_tables[index], 0, sizeof(union Page_Table_Entry));
+
+    //kprintf("Page dir:table = %x:%x -> index %x, address field: %x\n", de, te, index, address_field);
 
     page_tables[index].fields.present = true;
     page_tables[index].fields.read_write = rw;
@@ -68,70 +82,117 @@ void set_page_table_entry(uint32_t de,
     page_tables[index].fields.cache_disable = no_caching;
     page_tables[index].fields.accessed = false;
     page_tables[index].fields.dirty = false;
-    page_tables[index].fields.page_size = page_size;
     page_tables[index].fields.page_attribute_table = false;
     page_tables[index].fields.global = false;
     page_tables[index].fields.available = 0;
-    page_tables[index].fields.address = address;
+    page_tables[index].fields.address = address_field;
 }
+
+struct Page_Directory_Frame
+{
+    size_t dir_start, dir_end, page_start, page_end;
+};
+
+
+struct Page_Directory_Frame* get_frame(struct Page_Directory_Frame *frame, size_t virt_address, size_t block_size)
+{
+    // determine the page directory entry and page table entry
+    // corresponding to the virtual address
+    bool trailing_directory = ((virt_address % PD_ENTRY_SPAN) != 0) ? true : false;
+    frame->dir_start = virt_address / PD_ENTRY_SPAN;
+    uint32_t directory_offset = virt_address - (frame->dir_start * PD_ENTRY_SPAN);
+    frame->page_start = directory_offset / PAGE_SPAN;
+
+    // determine the page directory entry and page table entry
+    // corresponding to the end of the block of memory
+    uint32_t block_end = virt_address + block_size - 1;
+    frame->dir_end = (block_end / PD_ENTRY_SPAN) + (trailing_directory ? 1 : 0);
+    frame->page_end = (frame->page_start + (block_size / PAGE_SPAN) - 1) % PT_ENTRY_COUNT;
+
+    return frame;
+}
+
 
 
 /* set a block of page directory and page table entries matching a block of memory */
 void set_page_block(uint32_t phys_address,
                     uint32_t virt_address,
                     uint32_t block_size,
-                    bool page_size, bool rw,
-                    bool user, bool write_thru,
+                    bool rw, bool user,
+                    bool write_thru,
                     bool no_caching)
 {
-    // determine the page directory entry and page table entry
-    // corresponding to the virtual address
-    uint32_t trailing_directory = ((virt_address % PD_ENTRY_SPAN) != 0) ? 1 : 0;
-    uint32_t pd_start = (virt_address / PD_ENTRY_SPAN);
-    uint32_t directory_offset = virt_address - (pd_start * PD_ENTRY_SPAN);
-    uint32_t pe_start = directory_offset / PAGE_SPAN;
+    struct Page_Directory_Frame frame;
 
-    // determine the page directory entry and page table entry
-    // corresponding to the end of the block of memory
-    uint32_t block_end = virt_address + block_size - 1;
-    uint32_t pd_end = (block_end / PD_ENTRY_SPAN) + trailing_directory;
-    uint32_t trailing_block_size = block_size % PD_ENTRY_SPAN;
-    uint32_t pe_end = pe_start + (trailing_block_size / PAGE_SPAN) - 1;
+    get_frame(&frame, virt_address, block_size);
 
+    // SANITY CHECKS - make sure that the calculated values are sound
+    if (frame.dir_start > PD_ENTRY_COUNT)
+    {
+        kprintf("Invalid directory start: %x\n", frame.dir_start);
+        panic();
+    }
 
-    kprintf("physical address: %p, ", phys_address);
-    kprintf("virtual address: %p, ", virt_address);
-    kprintf("trailing directory: %s\n", (trailing_directory) ? "yes" : "no");
-    kprintf("page directory start: %x, ", pd_start);
-    kprintf("page table start: %x\n", pe_start);
-    kprintf("end address   : %p, ", block_end);
-    kprintf("page directory end  : %x, ", pd_end);
-    kprintf("page table end  : %x\n", pe_end);
-    kprintf("trailing block size : %x\n", trailing_block_size);
+    if (frame.dir_end > PD_ENTRY_COUNT)
+    {
+        kprintf("Invalid directory endpoint: %x\n", frame.dir_end);
+        panic();
+    }
 
-    uint32_t pd_entry = pd_start;
+    if (frame.page_start > PT_ENTRY_COUNT)
+    {
+        kprintf("Invalid page table entry start: %x\n", frame.page_start);
+        panic();
+    }
+
+    if (frame.page_end > PT_ENTRY_COUNT)
+    {
+        kprintf("Invalid page table entry endpoint: %x\n", frame.page_end);
+        panic();
+    }
+
+    // initialize the iteration variables here rather than in the for statement,
+    // as the values need to carry over fro one iteration to the next
+    uint32_t pd_entry = frame.dir_start;
     uint32_t pt_entry;
     size_t addr = phys_address;
 
-    for (bool first_entry = true; pd_entry <= pd_end; pd_entry++, first_entry = false)
+
+    for (bool first_entry = true; pd_entry <= frame.dir_end; pd_entry++, first_entry = false)
     {
-        pt_entry = first_entry ? pe_start : 0;
-        uint32_t pt_current_end = (pd_entry == pd_end) ? pe_end : PT_ENTRY_COUNT;
+        // if this is the first iteration of the loop, use the computed page entry location, 
+        // otherwise start from the beginning of the page entry
+        pt_entry = first_entry ? frame.page_start : 0;
+
+        // if this is the final iteration of the loop, use the computed page end location,
+        // otherwise fill the whole page entry
+        uint32_t pt_current_end = (pd_entry == frame.dir_end) ? frame.page_end + 1 : PT_ENTRY_COUNT;
+
+
+        // SANITY CHECK - does this overrun the table?
+        if (pt_current_end > PT_ENTRY_COUNT)
+        {
+            kprintf("Invalid local page table entry endpoint: %x\n", pt_current_end);
+            panic();
+        }
+
+        //kprintf("Mapping PD entry %x to physical address: %p\n", pd_entry, addr);
 
         set_page_directory_entry(pd_entry,
-                                 (size_t) &page_tables[pt_entry],
-                                 page_size, rw,
-                                 user, write_thru,
+                                 pt_entry,
+                                 rw, user,
+                                 write_thru,
                                  no_caching);
 
 
-        for (; pt_entry <= pt_current_end; pt_entry++, addr += PAGE_SPAN)
+        for (; pt_entry < pt_current_end; pt_entry++, addr += PAGE_SPAN)
         {
+            //kprintf("Mapping %x:%x to physical address: %p\n", pd_entry, pt_entry, addr);
             set_page_table_entry(pd_entry,
                                  pt_entry,
                                  addr,
-                                 page_size, rw,
-                                 user, write_thru,
+                                 rw, user,
+                                 write_thru,
                                  no_caching);
         }
     }
@@ -140,39 +201,44 @@ void set_page_block(uint32_t phys_address,
 
 void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE])
 {
+    size_t* kernel_physical_base = (size_t *) 0x00100000;
+    size_t kernel_size = 0x00300000;                             // 3 MiB
+    page_tables = (union Page_Table_Entry *) ((size_t) kernel_physical_base + kernel_size);
+    size_t page_table_size = 0x01000000;                         // 16 MiB
+    page_directory = (union Page_Directory_Entry *) ((size_t) page_tables + page_table_size);
+    size_t page_directory_size = 0x000001000;                    // 4 KiB
+    size_t* kernel_stack_physical_base = (size_t *) ((size_t) page_directory + page_directory_size);
+    size_t kernel_stack_size = 0x00004000;                       // 16 KiB
+    size_t* tables_physical_base = (size_t *) ((size_t) page_directory + 0x00400000);
+    size_t tables_size = 0x00400000;                             // 4 MiB
 
-    // first, set all of the page directory entries to a default state
-    memset(&page_directory[0], 0, PD_SIZE);
 
-    // do the same for all of the page table entries
-    memset(&page_tables[0], 0, PT_SIZE);
+    // identity map the first 1MiB
+    set_page_block(0, 0, 0x00100000, true, false, false, false);
 
-    // next, identity map the first 1MiB
-    set_page_block(0, 0, 0x00100000, false, true, false, false, false);
+    // identity map the kernel region
+    set_page_block((size_t) kernel_physical_base, (size_t) kernel_physical_base, kernel_size, true, false, false, false);
+
+    // identity map the section for the page directory and page tables
+    // these need to have physical addresses, not virtual ones
+    set_page_block((size_t) page_tables, (size_t) page_tables, page_table_size,  true, false, false, false);
+    set_page_block((size_t) page_directory, (size_t) page_directory, page_directory_size, true, false, false, false);
+
+    // identity map the stack
+    set_page_block((size_t) kernel_stack_physical_base, (size_t) kernel_stack_physical_base, kernel_stack_size, true, false, false, false);
 
     // map in the kernel region
-    set_page_block(0x00100000, KERNEL_BASE, 0x00100000, false, true, false, false, false);
+    set_page_block((size_t) kernel_physical_base, (size_t) &kernel_base, kernel_size, true, false, false, false);
 
-    // map in the various tables
-    set_page_block(0x00400000, (size_t) tables_base, 0x00b00000, false, true, false, false, false);
+    // map in the other various tables
+    // provision 4MiB for these just to cover future needs
+    set_page_block((size_t) tables_physical_base, (size_t) &tables_base, tables_size, true, false, false, false);
 
     // map in the stack
-    set_page_block(0x01000000, (size_t) &kernel_stack_base, 0x4000, false, true, false, false, false);
+    set_page_block((size_t) kernel_stack_physical_base, (size_t) &kernel_stack_base, kernel_stack_size, true, false, false, false);
 
 
-    // reset the paging address control register
-    // to point to the new page directory
-    __asm__ __volatile__ (
-    "    mov %0, %%cr3"
-    :
-    : "a" (page_directory)
-    );
-
-    // confirm that the paging bit is set
-    // in the main control register
-    __asm__ __volatile__ (
-    "    mov %cr0, %eax;"
-    "    or $0x80000000, %eax;"
-    "    mov %eax, %cr0;"
-    );
+    kprintf("Resetting paging... ");
+    page_reset();
+    kprintf("\nPaging reset\n");
 }

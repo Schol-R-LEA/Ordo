@@ -24,12 +24,29 @@ STARTUP(obj/kstart.o)
    kernel image. */
 SECTIONS
 {
-	/* Begin putting sections at the higher half. */
+	/* place the identity-mapped section for
+	   the page directory and page tables at the 4MiB
+	   point in physical memory (i.e., past the
+	   1MiB low memory plus the 3MiB kernel space). */
+    /*
+    . = 0x000400000;
+
+    .paging : ALIGN(4K)
+	{
+		page_tables = .;
+		. = . + (4M);
+		page_directory = .;
+        . = . + 4K;
+	} */
+
+
+	/* place the kernel at the start of the higher half */
 	. = 0xC0000000;
 
 	/* the .text section. */
 	.text : ALIGN(4K)
 	{
+		kernel_base = .;
 		*(.text)
 	}
 
@@ -53,11 +70,11 @@ SECTIONS
 	}
 
     /* hardware tables */
-    . = 0xC0100000;
+    . = 0xC0400000;
 
     .tables :
 	{
-		_tables_base = .;
+		tables_base = .;
 	}
 
     .boot_data : ALIGN (4K)
@@ -84,13 +101,6 @@ SECTIONS
 		. = . + 4K;
 	}
 
-    .paging : ALIGN(4K)
-	{
-        page_directory = .;
-        . = . + 4K;
-		page_tables = .;
-		. = . + (4M);
-	}
 
     /* set up the kernel stack */
     . = 0xC1000000;

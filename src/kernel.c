@@ -10,15 +10,12 @@
 #include "acpi.h"
 
 extern struct kdata boot_data;
-extern uint8_t _tables_base;
-uint8_t *tables_base;
 
 void kernel_main()
 {
     clear_screen();
     kprints("Starting Kernel...\n", CYAN, BLACK);
 
-    tables_base = &_tables_base;
 
     struct kdata* _boot_data = (struct kdata*) (KDATA_OFFSET - sizeof(struct kdata) - 16);
 
@@ -29,8 +26,9 @@ void kernel_main()
     print_mmap(boot_data.mmap_cnt, boot_data.mem_table);
 
 
-    kprintf("\nResetting GDT\n");
+    kprintf("\nResetting GDT... ");
     reset_gdt();
+    kprintf("GDT reset\n");
 
     reset_default_paging(boot_data.mmap_cnt, boot_data.mem_table);
 
