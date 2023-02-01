@@ -4,6 +4,9 @@
 #include "kernel.h"
 #include "mem.h"
 
+#define PAGE_ADDRESS_MASK 0xfffff000
+
+
 #define PD_ENTRY_COUNT 0x0400
 #define PT_ENTRY_COUNT 0x0400
 #define PT_ENTRY_TOTAL_COUNT (PD_ENTRY_COUNT * PT_ENTRY_COUNT)
