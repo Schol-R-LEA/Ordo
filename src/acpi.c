@@ -168,4 +168,6 @@ void init_acpi()
         panic();
     }
     kprintf("SDT checksum valid.\n");
+
+    
 }
