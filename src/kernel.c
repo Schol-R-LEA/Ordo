@@ -37,7 +37,6 @@ void kernel_main()
 
     init_acpi();
 
-
     kprints("End of kernel services", BLACK, CYAN);
     panic();
 }

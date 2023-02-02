@@ -39,7 +39,7 @@ struct ACPI_xSDT_Header {
   uint32_t OEM_Revision;
   uint32_t Creator_ID;
   uint32_t Creator_Revision;
-};
+} __attribute__ ((packed));
 
 
 void init_acpi();

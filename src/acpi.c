@@ -4,6 +4,7 @@
 #include "acpi.h"
 #include "kernel.h"
 #include "terminal.h"
+#include "paging.h"
 
 
 struct RSDP_Extended_Descriptor *rsdp;
@@ -53,7 +54,7 @@ bool validate_rsdp_checksum(struct RSDP_Extended_Descriptor *candidate)
 {
     int32_t checksum = 0;
     uint8_t i;
-    int8_t* c_ptr = (int8_t *) candidate;
+    uint8_t* c_ptr = (uint8_t *) candidate;
 
     for (i = 0; i < sizeof(struct RSDP_Descriptor); i++)
     {
@@ -97,11 +98,10 @@ bool validate_rsdp_checksum(struct RSDP_Extended_Descriptor *candidate)
 
 bool validate_sdt_checksum(struct ACPI_xSDT_Header *candidate)
 {
-    int32_t checksum = 0;
-    uint8_t i;
-    int8_t* c_ptr = (int8_t *) candidate;
+    uint8_t checksum = 0;
+    uint8_t* c_ptr = (uint8_t *) candidate;
 
-    for (i = 0; i < sizeof(struct ACPI_xSDT_Header); i++)
+    for (uint8_t i = 0; i < candidate->Length; i++)
     {
         checksum += c_ptr[i];
     }
@@ -142,7 +142,12 @@ void init_acpi()
                                        ? rsdp->ver_1.RsdtAddress
                                        : (uint32_t) rsdp->XsdtAddress);
 
-    kprintf("xSDT candidate found at 0x%p\n", sdt);
+    kprintf("xSDT candidate found at 0x%p, adding page to paging tables... ", sdt);
+
+    size_t sdt_page = (size_t) sdt & PAGE_ADDRESS_MASK;
+    set_page_block(sdt_page, sdt_page, 0x1000, false, false, false, false);
+    kprintf("done.\n");
+
 
     for (uint8_t i = 0; i < 4; i++)
     {
@@ -163,4 +168,6 @@ void init_acpi()
         panic();
     }
     kprintf("SDT checksum valid.\n");
+
+    
 }
