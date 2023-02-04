@@ -11,6 +11,9 @@
 
 extern struct kdata boot_data;
 
+extern size_t kernel_end;
+
+
 void kernel_main()
 {
     clear_screen();
@@ -23,8 +26,12 @@ void kernel_main()
 
     kprintf("Moving the memory map\n");
     memcpy(&boot_data, _boot_data, sizeof(struct kdata));
-    print_mmap(boot_data.mmap_cnt, boot_data.mem_table);
+    print_boot_mmap(boot_data.mmap_cnt, boot_data.mem_table);
 
+    kprintf("Total memory: %u MiB\n", get_total_mem(boot_data.mmap_cnt, boot_data.mem_table) / 1024 / 1024);
+    size_t kernel_size = (size_t) &kernel_end - (size_t) &kernel_base;
+    kprintf("kernel memory footprint %u KiB\n", kernel_size / 1024);
+    init_physical_memory_map(boot_data.mmap_cnt, boot_data.mem_table);
 
     kprintf("\nResetting GDT... ");
     reset_gdt();
@@ -33,7 +40,7 @@ void kernel_main()
     reset_default_paging(boot_data.mmap_cnt, boot_data.mem_table);
 
     init_default_interrupts();
-    enable_interrupts();
+    //enable_interrupts();
 
     init_acpi();
 

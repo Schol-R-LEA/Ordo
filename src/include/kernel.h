@@ -17,7 +17,7 @@ struct kdata
 {
     uint32_t drive_id;
     uint8_t fat[KDATA_FAT_SIZE];
-    struct memory_map_entry mem_table[KDATA_MAX_MEMTABLE_SIZE];
+    struct boot_memory_map_entry mem_table[KDATA_MAX_MEMTABLE_SIZE];
     uint32_t mmap_cnt;
 } __attribute__((packed));
 

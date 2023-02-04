@@ -69,6 +69,9 @@ SECTIONS
 		*(.bss)
 	}
 
+    kernel_end = .;
+
+
     /* hardware tables */
     . = 0xC0400000;
 
@@ -99,6 +102,13 @@ SECTIONS
 	{
 		idt = .;
 		. = . + 4K;
+	}
+
+	.print_mmap : ALIGN (4K)
+    {
+		pmm_table = .;
+		. = . + (2M);
+		pmm_table_end = .;
 	}
 
 

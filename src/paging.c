@@ -86,6 +86,9 @@ void set_page_table_entry(uint32_t de,
     page_tables[index].fields.global = false;
     page_tables[index].fields.available = 0;
     page_tables[index].fields.address = address_field;
+
+    // set matching PM map table entry
+    set_pmm_entry(address / PAGE_SPAN);
 }
 
 struct Page_Directory_Frame
@@ -199,7 +202,7 @@ void set_page_block(uint32_t phys_address,
 }
 
 
-void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE])
+void reset_default_paging(uint32_t map_size, struct boot_memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE])
 {
     size_t* kernel_physical_base = (size_t *) 0x00100000;
     size_t kernel_size = 0x00300000;                             // 3 MiB

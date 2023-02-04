@@ -77,7 +77,7 @@ void set_page_table_entry(uint32_t de, uint32_t te, size_t address, bool rw, boo
 
 void set_page_block(uint32_t phys_address, uint32_t virt_address, uint32_t block_size, bool rw, bool user, bool write_thru, bool no_caching);
 
-void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE]);
+void reset_default_paging(uint32_t map_size, struct boot_memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE]);
 
 
 inline static void page_reset()
