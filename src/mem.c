@@ -17,7 +17,10 @@ const char boot_mmap_types[][17] =
 
 
 extern struct PMM_Entry PMM_table[PT_ENTRY_TOTAL_COUNT];
-
+extern size_t kernel_heap;
+extern size_t ext_kernel_heap;
+struct KHM_Entry *heap_used;
+struct KHM_Entry *heap_free;
 
 void print_boot_mmap(uint32_t count, struct boot_memory_map_entry table[])
 {
@@ -117,7 +120,7 @@ void dump_line(void* src, uint8_t size)
 
 
 void memdump(void* src, uint32_t size)
-{ 
+{
     uint8_t* p = (uint8_t *) src;
     uint32_t remainder = size % LINE_SIZE;
     uint32_t lines = size / LINE_SIZE;
@@ -157,6 +160,27 @@ size_t get_total_mem(uint32_t count, struct boot_memory_map_entry table[])
 }
 
 
+size_t *get_mem_top(uint32_t count, struct boot_memory_map_entry table[])
+{
+
+    static size_t *mem_top = 0;
+
+    if ((size_t) mem_top > 0)
+    {
+        return mem_top;
+    }
+
+    for (size_t i = count; i > 0; i--)
+    {
+        if (table[i].type == 1)
+        {
+            mem_top = (size_t *) (size_t) table[i+1].base - 1;
+            break;
+        }
+    }
+    return mem_top;
+}
+
 
 void init_physical_memory_map(uint32_t count, struct boot_memory_map_entry table[])
 {
@@ -186,6 +210,37 @@ void init_physical_memory_map(uint32_t count, struct boot_memory_map_entry table
     }
 
     initialized = true;
+}
 
-    memdump(pmm_table, 256);
+
+void init_kernel_heap(uint32_t count, struct boot_memory_map_entry table[])
+{
+    // use the start of heap to hold the first three entries
+    // These entries represent the head of used heap,
+    // and the two initial sections of the free heap.
+    heap_used = (struct KHM_Entry *) &kernel_heap;
+    heap_used->base = heap_used; // points to itself
+    heap_used->span = sizeof(struct KHM_Entry) * 3;
+    heap_used->next = NULL;
+    heap_used->prev = NULL;
+    heap_free = heap_used + 1;
+    heap_free->base = heap_used + 3;    // points just past the end of the entries
+    heap_free->span = (size_t) (&tables_base - &kernel_heap) - heap_used->span;
+    heap_free->next = heap_used + 2;
+    heap_free->prev = NULL;
+    heap_free->next->span = (size_t) (get_mem_top(count, table) - &ext_kernel_heap);
+    heap_free->next->next = NULL;
+    heap_free->next->prev = heap_free;
+
+    if (heap_free->span < heap_free->next->span)
+    {
+        struct KHM_Entry* temp_head = heap_free;
+        struct KHM_Entry* temp_next = heap_free->next;
+        heap_free = temp_next;
+        heap_free->next = temp_head;
+        heap_free->prev = NULL;
+        heap_free->next = temp_head;
+        temp_head->next = NULL;
+        temp_head->prev = temp_next;
+    }
 }

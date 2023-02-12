@@ -70,6 +70,7 @@ SECTIONS
 	}
 
     kernel_end = .;
+    kernel_heap = .;
 
 
     /* hardware tables */
@@ -121,4 +122,6 @@ SECTIONS
 		*(.stack)
 		kernel_stack_top = . + 16K;
 	}
+
+	ext_kernel_heap = .;
 }

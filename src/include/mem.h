@@ -34,8 +34,20 @@ struct PMM_Entry
     size_t span;
 };
 
+
+struct KHM_Entry
+{
+    size_t *base;
+    size_t span;
+    struct KHM_Entry *prev;
+    struct KHM_Entry *next;
+};
+
+
 extern uint64_t pmm_table[];
 extern uint8_t pmm_table_end;
+
+
 
 static inline void set_pmm_entry(size_t index)
 {
@@ -66,11 +78,13 @@ static inline bool get_pmm_entry(size_t index)
 
 void print_boot_mmap(uint32_t count, struct boot_memory_map_entry table[]);
 size_t get_total_mem(uint32_t count, struct boot_memory_map_entry table[]);
+size_t *get_mem_top(uint32_t count, struct boot_memory_map_entry table[]);
 
 void* memset(void *ptr,  char value, size_t num);
 void* memcpy(void *destination, void *source, size_t num);
 void memdump(void* src, uint32_t size);
 
 void init_physical_memory_map(uint32_t count, struct boot_memory_map_entry table[]);
+void init_kernel_heap(uint32_t count, struct boot_memory_map_entry table[]);
 
 #endif
