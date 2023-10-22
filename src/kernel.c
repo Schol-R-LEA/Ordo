@@ -29,7 +29,7 @@ void kernel_main()
     print_boot_mmap(boot_data.mmap_cnt, boot_data.mem_table);
 
     kprintf("Total memory: %u MiB\n", get_total_mem(boot_data.mmap_cnt, boot_data.mem_table) / 1024 / 1024);
-    kprintf("top of free memory: %d MiB\n", (size_t) get_mem_top(boot_data.mmap_cnt, boot_data.mem_table) / 1024 / 1024);
+    kprintf("top of free memory: %u MiB\n", (size_t) get_mem_top(boot_data.mmap_cnt, boot_data.mem_table) / 1024 / 1024);
     size_t kernel_size = (size_t) &kernel_end - (size_t) &kernel_base;
     kprintf("kernel memory footprint %u KiB\n", kernel_size / 1024);
     init_physical_memory_map(boot_data.mmap_cnt, boot_data.mem_table);

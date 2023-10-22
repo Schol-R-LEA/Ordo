@@ -219,16 +219,16 @@ void init_kernel_heap(uint32_t count, struct boot_memory_map_entry table[])
     // These entries represent the head of used heap,
     // and the two initial sections of the free heap.
     heap_used = (struct KHM_Entry *) &kernel_heap;
-    heap_used->base = heap_used; // points to itself
+    heap_used->base = (size_t *) heap_used; // points to itself
     heap_used->span = sizeof(struct KHM_Entry) * 3;
     heap_used->next = NULL;
     heap_used->prev = NULL;
     heap_free = heap_used + 1;
-    heap_free->base = heap_used + 3;    // points just past the end of the entries
+    heap_free->base = (size_t *) heap_used + 3;    // points just past the end of the entries
     heap_free->span = (size_t) (&tables_base - &kernel_heap) - heap_used->span;
     heap_free->next = heap_used + 2;
     heap_free->prev = NULL;
-    heap_free->next->span = (size_t) (get_mem_top(count, table) - &ext_kernel_heap);
+    heap_free->next->span = (size_t) 0xffffffff - heap_used->span;
     heap_free->next->next = NULL;
     heap_free->next->prev = heap_free;
 
@@ -243,4 +243,10 @@ void init_kernel_heap(uint32_t count, struct boot_memory_map_entry table[])
         temp_head->next = NULL;
         temp_head->prev = temp_next;
     }
+}
+
+
+void* kmalloc(size_t size)
+{
+    
 }
