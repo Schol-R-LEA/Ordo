@@ -3,6 +3,7 @@
 #include "mem.h"
 #include "paging.h"
 #include "terminal.h"
+#include "spinlock.h"
 
 #define MMAP_SPACER "   | "
 
@@ -15,12 +16,14 @@ const char boot_mmap_types[][17] =
  "Bad Memory      "
 };
 
+struct
+{
+    spinlock lock;
+    struct Free_List_Entry *free_list;
+} kernel_memory_info;
 
-extern struct PMM_Entry PMM_table[PT_ENTRY_TOTAL_COUNT];
-extern size_t kernel_heap;
-extern size_t ext_kernel_heap;
-struct KHM_Entry *heap_used;
-struct KHM_Entry *heap_free;
+
+struct Free_List_Entry *heap_top;
 
 void print_boot_mmap(uint32_t count, struct boot_memory_map_entry table[])
 {
@@ -213,40 +216,53 @@ void init_physical_memory_map(uint32_t count, struct boot_memory_map_entry table
 }
 
 
-void init_kernel_heap(uint32_t count, struct boot_memory_map_entry table[])
+void init_heap(size_t* mem_top)
 {
-    // use the start of heap to hold the first three entries
-    // These entries represent the head of used heap,
-    // and the two initial sections of the free heap.
-    heap_used = (struct KHM_Entry *) &kernel_heap;
-    heap_used->base = (size_t *) heap_used; // points to itself
-    heap_used->span = sizeof(struct KHM_Entry) * 3;
-    heap_used->next = NULL;
-    heap_used->prev = NULL;
-    heap_free = heap_used + 1;
-    heap_free->base = (size_t *) heap_used + 3;    // points just past the end of the entries
-    heap_free->span = (size_t) (&tables_base - &kernel_heap) - heap_used->span;
-    heap_free->next = heap_used + 2;
-    heap_free->prev = NULL;
-    heap_free->next->span = (size_t) 0xffffffff - heap_used->span;
-    heap_free->next->next = NULL;
-    heap_free->next->prev = heap_free;
-
-    if (heap_free->span < heap_free->next->span)
+    spinlock_init(&kernel_memory_info.lock);
+    heap_top = (struct Free_List_Entry *) mem_top;
+    kernel_memory_info.free_list = (struct Free_List_Entry *) page_round_up(&heap);
+    for (struct Free_List_Entry* block = kernel_memory_info.free_list; block < heap_top; block++)
     {
-        struct KHM_Entry* temp_head = heap_free;
-        struct KHM_Entry* temp_next = heap_free->next;
-        heap_free = temp_next;
-        heap_free->next = temp_head;
-        heap_free->prev = NULL;
-        heap_free->next = temp_head;
-        temp_head->next = NULL;
-        temp_head->prev = temp_next;
+        kfree(block);
     }
 }
 
+void kfree(void* start)
+{
+    spinlock_acquire(&kernel_memory_info.lock);
+    if (!(is_page_aligned(start) && is_in_range(start, &heap, heap_top)))
+    {
+        kprintf("Invalid heap address: %p\n", start);
+        panic("Invalid heap address");
+    }
+    else
+    {
+        memset(start, 0, sizeof(struct Free_List_Entry));
+        struct Free_List_Entry *block = (struct Free_List_Entry *) start;
+        block->page_header.next = kernel_memory_info.free_list;
+        kernel_memory_info.free_list = block;
+    }
+    spinlock_release(&kernel_memory_info.lock);
+}
+
+
+/* allocate one page of memory */
 
 void* kmalloc(size_t size)
 {
-    
+    struct Free_List_Entry *block = kernel_memory_info.free_list;
+
+    spinlock_acquire(&kernel_memory_info.lock);
+    if (block != nullptr)
+    {
+        kernel_memory_info.free_list = block->page_header.next;
+    }
+
+    if (block != nullptr)
+    {
+        memset(block, '@', sizeof(struct Free_List_Entry));
+    }
+    spinlock_release(&kernel_memory_info.lock);
+
+    return (void *) block;
 }

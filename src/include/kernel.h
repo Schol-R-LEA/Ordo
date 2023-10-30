@@ -2,6 +2,7 @@
 #define KERNEL_H
 
 #include "mem.h"
+#include "terminal.h"
 
 #define KERNEL_BASE 0xC0000000
 #define KERNEL_PHYS_BASE 0x00010000
@@ -31,8 +32,10 @@ extern uint32_t tables_base;
 extern uint32_t kernel_base;
 extern uint32_t kernel_stack_base;
 
-static inline void panic()
+
+static inline void panic(char* msg)
 {
+    kprintf("%s\n", msg);
     __asm__ ("local_loop:\n"
              "    hlt\n"
              "    jmp local_loop");

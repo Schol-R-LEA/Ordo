@@ -46,7 +46,7 @@ SECTIONS
 	/* the .text section. */
 	.text : ALIGN(4K)
 	{
-		kernel_base = .;
+		PROVIDE(kernel_base = .);
 		*(.text)
 	}
 
@@ -69,9 +69,8 @@ SECTIONS
 		*(.bss)
 	}
 
-    kernel_end = .;
-    kernel_heap = .;
-
+    . = 0xC03FFFFF;
+    PROVIDE(kernel_end = .);
 
     /* hardware tables */
     . = 0xC0400000;
@@ -109,7 +108,7 @@ SECTIONS
     {
 		pmm_table = .;
 		. = . + (2M);
-		pmm_table_end = .;
+		pmm_table_size = . - pmm_table;
 	}
 
 
@@ -123,5 +122,8 @@ SECTIONS
 		kernel_stack_top = . + 16K;
 	}
 
-	ext_kernel_heap = .;
+    .heap : ALIGN(4K)
+	{
+		heap = .;
+	}
 }

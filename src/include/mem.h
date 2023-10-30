@@ -3,6 +3,18 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdatomic.h>
+
+#define KBYTE 1024
+#define MBYTE (KBYTE * KBYTE)
+#define GBYTE (MBYTE * KBYTE)
+#define PAGE_SIZE (KBYTE * 4)
+#define PAGE_TOP (PAGE_SIZE - 1)
+#define PAGE_DATA_SIZE (PAGE_SIZE - sizeof(struct Page_Header*))
+
+
+#define pmm_bitwidth (sizeof(pmm_table[0]) * 8)
+
 
 struct boot_memory_map_entry
 {
@@ -15,7 +27,7 @@ struct boot_memory_map_entry
 
 enum PM_Type : uint8_t
 {
-    NONE, RESERVED, FIRMWARE, MMIO, FREE
+    NONE, RESERVED, FIRMWARE, MMIO, SYSTEM, HEAP
 };
 
 
@@ -35,24 +47,56 @@ struct PMM_Entry
 };
 
 
-struct KHM_Entry
+struct Page_Header
 {
-    size_t *base;
-    size_t span;
-    struct KHM_Entry *prev;
-    struct KHM_Entry *next;
-};
+    struct Free_List_Entry *next;
+} __attribute__((packed));
+
+
+struct Free_List_Entry
+{
+    struct Page_Header page_header;
+    uint8_t data[PAGE_SIZE - sizeof(struct Page_Header)];
+} __attribute__((packed));
+
 
 
 extern uint64_t pmm_table[];
-extern uint8_t pmm_table_end;
+extern uint8_t pmm_table_size;
+
+extern struct Free_List_Entry heap;
+extern struct Free_List_Entry *heap_top;
+
+
+static inline void* page_round_up(void* value)
+{
+    return (void*) (((size_t) value + PAGE_TOP) & ~(PAGE_TOP));
+}
+
+
+static inline void* page_round_down(void* value)
+{
+    return (void*) ((size_t) value & ~(PAGE_TOP));
+}
+
+
+static inline bool is_page_aligned(void* address)
+{
+    return ((size_t) address % PAGE_SIZE) == 0;
+}
+
+
+static inline bool is_in_range(void* address, void* low, void* high)
+{
+    return address >= low && address < high;
+}
 
 
 
 static inline void set_pmm_entry(size_t index)
 {
-    size_t byte_index = index / 64;
-    size_t bit_index = index % 64;
+    size_t byte_index = index / pmm_bitwidth;
+    size_t bit_index = index % pmm_bitwidth;
 
     pmm_table[byte_index] = pmm_table[byte_index] | (1 << bit_index);
 }
@@ -85,6 +129,9 @@ void* memcpy(void *destination, void *source, size_t num);
 void memdump(void* src, uint32_t size);
 
 void init_physical_memory_map(uint32_t count, struct boot_memory_map_entry table[]);
-void init_kernel_heap(uint32_t count, struct boot_memory_map_entry table[]);
+void init_heap(size_t* mem_top);
+
+void kfree(void* start);
+void* kmalloc(size_t size);
 
 #endif

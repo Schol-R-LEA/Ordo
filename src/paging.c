@@ -21,7 +21,7 @@ void set_page_directory_entry(uint32_t index,
     if (index > PD_ENTRY_COUNT)
     {
         kprintf("Invalid directory entry index: %x\n", index);
-        panic();
+        panic("Invalid directory entry index");
     }
 
     size_t pte_address = (size_t) &page_tables[pt_entry + (index * PT_ENTRY_COUNT)];
@@ -61,13 +61,13 @@ void set_page_table_entry(uint32_t de,
     if (de > PD_ENTRY_COUNT)
     {
         kprintf("Invalid directory entry: %x\n", de);
-        panic();
+        panic("Invalid directory entry");
     }
 
     if (index > (PT_ENTRY_COUNT * PD_ENTRY_COUNT))
     {
         kprintf("Invalid table entry index: %x\n", index);
-        panic();
+        panic("Invalid table entry index");
     }
 
     // first, clear the directory entry
@@ -133,25 +133,25 @@ void set_page_block(uint32_t phys_address,
     if (frame.dir_start > PD_ENTRY_COUNT)
     {
         kprintf("Invalid directory start: %x\n", frame.dir_start);
-        panic();
+        panic("Invalid directory start");
     }
 
     if (frame.dir_end > PD_ENTRY_COUNT)
     {
         kprintf("Invalid directory endpoint: %x\n", frame.dir_end);
-        panic();
+        panic("Invalid directory endpoint");
     }
 
     if (frame.page_start > PT_ENTRY_COUNT)
     {
         kprintf("Invalid page table entry start: %x\n", frame.page_start);
-        panic();
+        panic("Invalid page table entry start");
     }
 
     if (frame.page_end > PT_ENTRY_COUNT)
     {
         kprintf("Invalid page table entry endpoint: %x\n", frame.page_end);
-        panic();
+        panic("Invalid page table entry endpoint");
     }
 
     // initialize the iteration variables here rather than in the for statement,
@@ -176,7 +176,7 @@ void set_page_block(uint32_t phys_address,
         if (pt_current_end > PT_ENTRY_COUNT)
         {
             kprintf("Invalid local page table entry endpoint: %x\n", pt_current_end);
-            panic();
+            panic("Invalid local page table entry endpoint");
         }
 
         //kprintf("Mapping PD entry %x to physical address: %p\n", pd_entry, addr);
