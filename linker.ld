@@ -5,6 +5,7 @@ ENTRY(kstart)
 
 INPUT(
 	obj/kernel.o
+	obj/cpu.o
 	obj/terminal.o
 	obj/mem.o
 	obj/idt.o
@@ -12,6 +13,7 @@ INPUT(
 	obj/gdt_set.o
     obj/paging.o
 	obj/acpi.o
+	obj/timer.o
 )
 
 
@@ -121,6 +123,10 @@ SECTIONS
 		*(.stack)
 		kernel_stack_top = . + 16K;
 	}
+
+    . = kernel_stack_top;
+
+    .reserved_end = .;
 
     .heap : ALIGN(4K)
 	{

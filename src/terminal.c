@@ -57,6 +57,15 @@ void gotoxy(uint16_t x, uint16_t y)
     currv = y;
 }
 
+uint16_t get_x()
+{
+    return currh;
+}
+
+uint16_t get_y()
+{
+    return currv;
+}
 
 void set_fg(enum Color new_fg)
 {

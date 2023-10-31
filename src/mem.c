@@ -7,6 +7,7 @@
 
 #define MMAP_SPACER "   | "
 
+
 const char boot_mmap_types[][17] =
 {"                ",
  "Free Memory     ",
@@ -23,7 +24,7 @@ struct
 } kernel_memory_info;
 
 
-struct Free_List_Entry *heap_top;
+struct Free_List_Entry *heap_start, *heap_top;
 
 void print_boot_mmap(uint32_t count, struct boot_memory_map_entry table[])
 {
@@ -162,6 +163,18 @@ size_t get_total_mem(uint32_t count, struct boot_memory_map_entry table[])
     return total_mem_size;
 }
 
+size_t *get_mem_start(uint32_t count, struct boot_memory_map_entry table[])
+{
+    for (size_t i = count; i > 0; i--)
+    {
+        if (table[i].type == 1)
+        {
+            return (size_t *) (size_t) table[i].base;
+        }
+    }
+    return nullptr;
+}
+
 
 size_t *get_mem_top(uint32_t count, struct boot_memory_map_entry table[])
 {
@@ -216,32 +229,53 @@ void init_physical_memory_map(uint32_t count, struct boot_memory_map_entry table
 }
 
 
-void init_heap(size_t* mem_top)
+
+size_t init_heap(size_t* mem_start, size_t* mem_top)
 {
     spinlock_init(&kernel_memory_info.lock);
+    heap_start = (struct Free_List_Entry *) mem_start;
     heap_top = (struct Free_List_Entry *) mem_top;
-    kernel_memory_info.free_list = (struct Free_List_Entry *) page_round_up(&heap);
-    for (struct Free_List_Entry* block = kernel_memory_info.free_list; block < heap_top; block++)
+    kernel_memory_info.free_list = (struct Free_List_Entry *) page_round_up(heap_start);
+    size_t page_count = 0;
+    for (struct Free_List_Entry* block = kernel_memory_info.free_list;
+         //block < heap_top - sizeof(struct Free_List_Entry);
+         page_count < 768;
+         block++)
     {
         kfree(block);
+        page_count++;
     }
+
+    return page_count;
 }
 
 void kfree(void* start)
 {
     spinlock_acquire(&kernel_memory_info.lock);
-    if (!(is_page_aligned(start) && is_in_range(start, &heap, heap_top)))
+
+    if (!(is_page_aligned(start) && addr_in_range(start, heap_start, heap_top)))
     {
-        kprintf("Invalid heap address: %p\n", start);
-        panic("Invalid heap address");
+        kprintf("unaligned page address: %p\n", start);
+        panic("Unaligned page address");
+    }
+    if ((size_t) start < (size_t) heap_start)
+    {
+        kprintf("page address too low: %p\n", start);
+        panic("Page address out of range");
+    }
+    if ((size_t) start > (size_t) (heap_top - sizeof(struct Free_List_Entry)))
+    {
+        kprintf("page address too high: %p > %p\n", start, heap_top);
+        panic("Page address out of range");
     }
     else
     {
         memset(start, 0, sizeof(struct Free_List_Entry));
-        struct Free_List_Entry *block = (struct Free_List_Entry *) start;
-        block->page_header.next = kernel_memory_info.free_list;
-        kernel_memory_info.free_list = block;
+        //struct Free_List_Entry *block = (struct Free_List_Entry *) start;
+        //block->page_header.next = kernel_memory_info.free_list;
+        //kernel_memory_info.free_list = block;
     }
+
     spinlock_release(&kernel_memory_info.lock);
 }
 
@@ -257,12 +291,13 @@ void* kmalloc(size_t size)
     {
         kernel_memory_info.free_list = block->page_header.next;
     }
+    spinlock_release(&kernel_memory_info.lock);
+
 
     if (block != nullptr)
     {
         memset(block, '@', sizeof(struct Free_List_Entry));
     }
-    spinlock_release(&kernel_memory_info.lock);
 
     return (void *) block;
 }

@@ -202,7 +202,7 @@ void set_page_block(uint32_t phys_address,
 }
 
 
-void reset_default_paging(uint32_t map_size, struct boot_memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE])
+void reset_default_paging(uint32_t map_size, struct boot_memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE], void* heap_start, size_t heap_size)
 {
     size_t* kernel_physical_base = (size_t *) 0x00100000;
     size_t kernel_size = 0x00300000;                             // 3 MiB
@@ -230,6 +230,10 @@ void reset_default_paging(uint32_t map_size, struct boot_memory_map_entry mt[KDA
     // identity map the stack
     set_page_block((size_t) kernel_stack_physical_base, (size_t) kernel_stack_physical_base, kernel_stack_size, true, false, false, false);
 
+    // identity map the free heap
+    set_page_block((size_t) &heap_start, (size_t) &heap_start, heap_size, true, false, false, false);
+
+
     // map in the kernel region
     set_page_block((size_t) kernel_physical_base, (size_t) &kernel_base, kernel_size, true, false, false, false);
 
@@ -240,8 +244,5 @@ void reset_default_paging(uint32_t map_size, struct boot_memory_map_entry mt[KDA
     // map in the stack
     set_page_block((size_t) kernel_stack_physical_base, (size_t) &kernel_stack_base, kernel_stack_size, true, false, false, false);
 
-
-    kprintf("Resetting paging... ");
     page_reset();
-    kprintf("Paging reset\n");
 }
