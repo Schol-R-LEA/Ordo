@@ -30,9 +30,6 @@ void set_page_directory_entry(uint32_t index,
     // clear the directory entry
     memset(&page_directory[index], 0, sizeof(union Page_Directory_Entry));
 
-    //kprintf("directory index %x, ", index);
-    //kprintf("Page table entry address: %p, mapped to %x\n", pte_address, address_field);
-
     page_directory[index].fields.present = true;
     page_directory[index].fields.read_write = rw;
     page_directory[index].fields.user = user;
@@ -48,13 +45,13 @@ void set_page_directory_entry(uint32_t index,
 
 void set_page_table_entry(uint32_t de,
                           uint32_t te,
-                          size_t address,
+                          void *address,
                           bool rw, bool user,
                           bool write_thru,
                           bool no_caching)
 {
     uint32_t index = te + (de * PT_ENTRY_COUNT);
-    size_t address_field = address >> 12;
+    size_t address_field = (size_t) address >> 12;
 
 
     // SANITY CHECK - does this overrun the table?
@@ -88,7 +85,7 @@ void set_page_table_entry(uint32_t de,
     page_tables[index].fields.address = address_field;
 
     // set matching PM map table entry
-    set_pmm_entry(address / PAGE_SPAN);
+    set_pmm_entry((size_t) address / PAGE_SPAN);
 }
 
 struct Page_Directory_Frame
@@ -97,18 +94,18 @@ struct Page_Directory_Frame
 };
 
 
-struct Page_Directory_Frame* get_frame(struct Page_Directory_Frame *frame, size_t virt_address, size_t block_size)
+struct Page_Directory_Frame* get_frame(struct Page_Directory_Frame *frame, void *virt_address, size_t block_size)
 {
     // determine the page directory entry and page table entry
     // corresponding to the virtual address
-    bool trailing_directory = ((virt_address % PD_ENTRY_SPAN) != 0) ? true : false;
-    frame->dir_start = virt_address / PD_ENTRY_SPAN;
-    uint32_t directory_offset = virt_address - (frame->dir_start * PD_ENTRY_SPAN);
+    bool trailing_directory = (((size_t) virt_address % PD_ENTRY_SPAN) != 0) ? true : false;
+    frame->dir_start = (size_t) virt_address / PD_ENTRY_SPAN;
+    uint32_t directory_offset = (size_t) virt_address - (frame->dir_start * PD_ENTRY_SPAN);
     frame->page_start = directory_offset / PAGE_SPAN;
 
     // determine the page directory entry and page table entry
     // corresponding to the end of the block of memory
-    uint32_t block_end = virt_address + block_size - 1;
+    uint32_t block_end = (size_t) virt_address + block_size - 1;
     frame->dir_end = (block_end / PD_ENTRY_SPAN) + (trailing_directory ? 1 : 0);
     frame->page_end = (frame->page_start + (block_size / PAGE_SPAN) - 1) % PT_ENTRY_COUNT;
 
@@ -118,8 +115,8 @@ struct Page_Directory_Frame* get_frame(struct Page_Directory_Frame *frame, size_
 
 
 /* set a block of page directory and page table entries matching a block of memory */
-void set_page_block(uint32_t phys_address,
-                    uint32_t virt_address,
+void set_page_block(void *phys_address,
+                    void *virt_address,
                     uint32_t block_size,
                     bool rw, bool user,
                     bool write_thru,
@@ -158,7 +155,7 @@ void set_page_block(uint32_t phys_address,
     // as the values need to carry over fro one iteration to the next
     uint32_t pd_entry = frame.dir_start;
     uint32_t pt_entry;
-    size_t addr = phys_address;
+    size_t *addr = phys_address;
 
 
     for (bool first_entry = true; pd_entry <= frame.dir_end; pd_entry++, first_entry = false)
@@ -202,47 +199,51 @@ void set_page_block(uint32_t phys_address,
 }
 
 
-void reset_default_paging(uint32_t map_size, struct boot_memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE], void* heap_start, size_t heap_size)
+void reset_default_paging(size_t heap_size)
 {
-    size_t* kernel_physical_base = (size_t *) 0x00100000;
-    size_t kernel_size = 0x00300000;                             // 3 MiB
-    page_tables = (union Page_Table_Entry *) ((size_t) kernel_physical_base + kernel_size);
-    size_t page_table_size = 0x01000000;                         // 16 MiB
-    page_directory = (union Page_Directory_Entry *) ((size_t) page_tables + page_table_size);
-    size_t page_directory_size = 0x000001000;                    // 4 KiB
-    size_t* kernel_stack_physical_base = (size_t *) ((size_t) page_directory + page_directory_size);
-    size_t kernel_stack_size = 0x00004000;                       // 16 KiB
-    size_t* tables_physical_base = (size_t *) ((size_t) page_directory + 0x00400000);
-    size_t tables_size = 0x00400000;                             // 4 MiB
-
-
     // identity map the first 1MiB
     set_page_block(0, 0, 0x00100000, true, false, false, false);
 
     // identity map the kernel region
-    set_page_block((size_t) kernel_physical_base, (size_t) kernel_physical_base, kernel_size, true, false, false, false);
+    set_page_block(kernel_physical_base, kernel_physical_base, (size_t) &kernel_physical_size, true, false, false, false);
+
 
     // identity map the section for the page directory and page tables
     // these need to have physical addresses, not virtual ones
-    set_page_block((size_t) page_tables, (size_t) page_tables, page_table_size,  true, false, false, false);
-    set_page_block((size_t) page_directory, (size_t) page_directory, page_directory_size, true, false, false, false);
-
+    set_page_block(page_tables_base, page_tables_base, (size_t) &page_tables_size,  true, false, false, false);
+    set_page_block(page_directory_base, page_directory_base, (size_t) &page_directory_size, true, false, false, false);
+    // identity map the section for the page directory and page tables
+    // these need to have physical addresses, not virtual ones
+    set_page_block(page_tables_base, page_tables_base, (size_t) &page_tables_size,  true, false, false, false);
+    set_page_block(&page_directory_base, page_directory_base, (size_t) &page_directory_size, true, false, false, false);
+    // identity map the sections for the GDT, TSS, and IDT
+    // these need to have physical addresses, not virtual ones
+    set_page_block(gdt_physical_base, gdt_physical_base, (size_t) &gdt_physical_size,  true, false, false, false);
+    set_page_block(tss_physical_base, tss_physical_base, (size_t) &tss_physical_size,  true, false, false, false);
+    set_page_block(idt_physical_base, idt_physical_base, (size_t) &idt_physical_size,  true, false, false, false);
+    // identity map the section for the pmm table
+    // these need to have physical addresses, not virtual ones
+    set_page_block(pmmap_physical_base, pmmap_physical_base, (size_t) &pmmap_physical_size,  true, false, false, false);
     // identity map the stack
-    set_page_block((size_t) kernel_stack_physical_base, (size_t) kernel_stack_physical_base, kernel_stack_size, true, false, false, false);
+    set_page_block(kernel_stack_physical_base, kernel_stack_physical_base, (size_t) &kernel_stack_physical_size, true, false, false, false);
 
     // identity map the free heap
-    set_page_block((size_t) &heap_start, (size_t) &heap_start, heap_size, true, false, false, false);
+    set_page_block(heap_physical_base, heap_physical_base, heap_size, true, false, false, false);
 
 
     // map in the kernel region
-    set_page_block((size_t) kernel_physical_base, (size_t) &kernel_base, kernel_size, true, false, false, false);
+    set_page_block(kernel_physical_base, kernel_base, (size_t) &kernel_physical_size, true, false, false, false);
+
 
     // map in the other various tables
-    // provision 4MiB for these just to cover future needs
-    set_page_block((size_t) tables_physical_base, (size_t) &tables_base, tables_size, true, false, false, false);
+    set_page_block(gdt_physical_base, gdt_base, (size_t) &gdt_physical_size, true, false, false, false);
+    set_page_block(tss_physical_base, tss_base, (size_t) &tss_physical_size, true, false, false, false);
+    set_page_block(idt_physical_base, idt_base, (size_t) &idt_physical_size, true, false, false, false);
+    set_page_block(pmmap_physical_base, gdt_base, (size_t) &gdt_physical_size, true, false, false, false);
 
     // map in the stack
-    set_page_block((size_t) kernel_stack_physical_base, (size_t) &kernel_stack_base, kernel_stack_size, true, false, false, false);
+    set_page_block(kernel_stack_physical_base, kernel_stack_base, (size_t) &kernel_stack_physical_size, true, false, false, false);
+
 
     page_reset();
 }

@@ -141,7 +141,7 @@ void init_acpi()
 
     kprintf("xSDT candidate found at 0x%p, adding page to paging tables... ", sdt);
 
-    size_t sdt_page = (size_t) sdt & PAGE_ADDRESS_MASK;
+    void *sdt_page = (void *) ((size_t) sdt & PAGE_ADDRESS_MASK);
     set_page_block(sdt_page, sdt_page, 0x1000, false, false, false, false);
     kprintf("done.\n");
 
@@ -165,5 +165,4 @@ void init_acpi()
     }
     kprintf("SDT checksum valid.\n");
 
-    
 }

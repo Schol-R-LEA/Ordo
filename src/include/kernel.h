@@ -28,9 +28,17 @@ enum PRIVILEGE_LEVEL
     RING_0, RING_1, RING_2, RING_3
 };
 
-extern uint32_t tables_base;
-extern uint32_t kernel_base;
-extern uint32_t kernel_stack_base;
+extern void *kernel_physical_size, *kernel_physical_base, *kernel_base, *kernel_end,
+            *kernel_boot_data_physical_size, *kernel_boot_data_physical_base,
+            *page_tables_size, *page_tables_base, *page_directory_size, *page_directory_base,
+            *gdt_physical_size, *gdt_physical_base, *gdt_base,
+            *tss_physical_size, *tss_physical_base, *tss_base,
+            *idt_physical_size, *idt_physical_base, *idt_base,
+            *pmmap_physical_size, *pmmap_physical_base, *pmm_base,
+            *kernel_stack_physical_size, *kernel_stack_physical_base, *kernel_stack_base,
+            *system_reserved_size, *system_reserved_end,
+            *heap_physical_base, *heap_base;
+
 
 static inline void panic(char* msg)
 {

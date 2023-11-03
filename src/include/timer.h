@@ -3,9 +3,9 @@
 
 #include <stdbool.h>
 
-void init_timer();
-void diasble_timer();
-void enable_timer();
-bool timer_enabled();
+void init_timer(void);
+void diasble_timer(void);
+void enable_timer(void);
+bool timer_enabled(void);
 
 #endif
