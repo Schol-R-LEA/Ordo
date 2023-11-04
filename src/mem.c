@@ -1,11 +1,16 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "mem.h"
+#include "consts.h"
 #include "paging.h"
 #include "terminal.h"
 #include "spinlock.h"
 
 #define MMAP_SPACER "   | "
+
+
+uint64_t *pmm_table;
+uint8_t pmm_table_size;
 
 
 const char boot_mmap_types[][17] =
@@ -22,6 +27,8 @@ struct
     spinlock lock;
     struct Free_List_Entry *free_list;
 } kernel_memory_info;
+
+
 
 
 struct Free_List_Entry *heap_start, *heap_top;
@@ -196,38 +203,6 @@ size_t *get_mem_top(uint32_t count, struct boot_memory_map_entry table[])
     }
     return mem_top;
 }
-
-
-void init_physical_memory_map(uint32_t count, struct boot_memory_map_entry table[])
-{
-    static bool initialized = false;
-
-    if (initialized)
-    {
-        return;
-    }
-
-    for(size_t i = 0; i < count; i++)
-    {
-        if (table[i].type != 1)
-        {
-            for (size_t j = table[i].base / 0x1000; j < table[i].length / 0x1000; j++)
-            {
-                set_pmm_entry(j);
-            }
-        }
-        else
-        {
-            for (size_t j = table[i].base / 0x1000; j < table[i].length / 0x1000; j++)
-            {
-                clear_pmm_entry(j);
-            }
-        }
-    }
-
-    initialized = true;
-}
-
 
 
 size_t init_heap(size_t* mem_start, size_t* mem_top)

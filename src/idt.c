@@ -3,11 +3,11 @@
 #include "kernel.h"
 #include "gdt.h"
 #include "terminal.h"
-
+#include "consts.h"
 
 void idt_set_descriptor(uint8_t vector, void isr(struct Interrupt_Frame*), enum PRIVILEGE_LEVEL dpl, enum IDT_gate_type gate_type)
 {
-    struct Interrupt_Descriptor_32* descriptor = &((struct Interrupt_Descriptor_32*) idt_base)[vector];
+    struct Interrupt_Descriptor_32 *descriptor = (struct Interrupt_Descriptor_32 *) &idt[vector];
 
     descriptor->offset_low       = (uint16_t) ((uint32_t) isr & 0xFFFF);
     descriptor->segment_selector = system_code_selector;
@@ -57,7 +57,7 @@ void init_default_interrupts()
     // initialize the values to put into the IDT register
     __attribute__((aligned(0x10))) static struct IDT_R idt_r;
 
-    idt_r.base = (uintptr_t) &idt_base;
+    idt_r.base = (uintptr_t) idt;
     idt_r.size = (uint16_t) sizeof(struct Interrupt_Descriptor_32) * IDT_SIZE - 1;
 
     // As a precaution, populate the IDT with default ISRs.

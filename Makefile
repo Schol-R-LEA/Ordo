@@ -17,6 +17,7 @@ C_INCLUDES=-I $(C_SRC)/include
 OBJPATH=obj
 KERNEL=kernel
 KSTART=kstart
+CONSTS=consts
 CPU=cpu
 GDT=gdt
 GDT_SET=gdt_set
@@ -42,10 +43,10 @@ install: boot stage2 link
 	$(REIMAGE) convert -f raw -O qcow2 $(OBJPATH)/$(DISKTARGET) ordo.qcow2
 
 
-link: kstart kernel cpu terminal mem gdt idt acpi paging timer
+link: kstart kernel cpu terminal mem gdt idt acpi paging timer consts
 	$(LD) -T $(LINK_SCRIPT)
 
-kernel: cpu terminal paging mem idt gdt acpi timer
+kernel: cpu terminal paging mem idt gdt acpi timer consts
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(KERNEL).c -o $(OBJPATH)/$(KERNEL).o
 
 acpi: terminal
@@ -54,14 +55,14 @@ acpi: terminal
 idt: terminal
 	$(CC) $(CFLAGS) -mgeneral-regs-only $(C_INCLUDES) -c $(C_SRC)/$(IDT).c -o $(OBJPATH)/$(IDT).o
 
-gdt:
+gdt: consts
 	$(ASM) -f elf32 $(C_SRC)/$(GDT_SET).asm -o $(OBJPATH)/$(GDT_SET).o -l $(OBJPATH)/$(GDT_SET).lst
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(GDT).c -o $(OBJPATH)/$(GDT).o
 
-paging: terminal mem
+paging: terminal mem consts
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(PAGING).c -o $(OBJPATH)/$(PAGING).o
 
-mem: terminal
+mem: terminal consts
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(MEM).c -o $(OBJPATH)/$(MEM).o
 
 terminal:
@@ -72,6 +73,9 @@ timer:
 
 cpu:
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(CPU).c -o $(OBJPATH)/$(CPU).o
+
+consts:
+	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(CONSTS).c -o $(OBJPATH)/$(CONSTS).o
 
 kstart:
 	$(ASM) -f elf32 $(C_SRC)/$(KSTART).asm -o $(OBJPATH)/$(KSTART).o -l $(OBJPATH)/$(KSTART).lst

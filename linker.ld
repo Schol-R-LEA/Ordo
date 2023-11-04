@@ -5,6 +5,7 @@ ENTRY(kstart)
 
 INPUT(
 	obj/kernel.o
+	obj/consts.o
 	obj/cpu.o
 	obj/terminal.o
 	obj/mem.o
@@ -29,73 +30,8 @@ SECTIONS
     . = 0x000100000;
 	PROVIDE(kernel_physical_base = .);
 
-    . = kernel_physical_base + (64K - 16 + 8K);
 
-    .physical_boot_data : ALIGN (4K)
-    {
-        PROVIDE(kernel_boot_data_physical_base = .);
-		. = . + (16 + 8K);
-    }
-	PROVIDE(kernel_boot_data_physical_end = .);
-	PROVIDE(kernel_boot_data_physical_size = . - kernel_boot_data_physical_base);
-
-
-	/* place the identity-mapped section for
-	   the page directory and page tables at the 4MiB
-	   point in physical memory (i.e., past the
-	   1MiB low memory plus the 3MiB kernel space). */
-    . = 0x000400000;
-    PROVIDE(kernel_physical_size = . - kernel_physical_base);
-
-    .paging : ALIGN(4K)
-	{
-		PROVIDE(page_tables_base = .);
-		. = . + (4M);
-		PROVIDE(page_tables_size = . - page_tables_base);
-		PROVIDE(page_directory_base = .);
-        . = . + (4K);
-		PROVIDE(page_directory_size = . - page_directory_base);
-	}
-
-    .physical_gdt : ALIGN(4K)
-	{
-		PROVIDE(gdt_physical_base = .);
-		. = . + (64K);
-        PROVIDE(gdt_physical_size = . - gdt_physical_base);
-	}
-
-    .physical_tss : ALIGN(4K)
-	{
-		PROVIDE(tss_physical_base = .);
-		. = . + (4K);
-        PROVIDE(tss_physical_size = . - tss_physical_base);
-	}
-
-    .physical_idt : ALIGN(4K)
-	{
-		PROVIDE(idt_physical_base = .);
-		. = . + (4K);
-        PROVIDE(idt_physical_size = . - idt_physical_base);
-	}
-
-    .physical_pmmap : ALIGN(4K)
-	{
-		PROVIDE(pmmap_physical_base = .);
-		. = . + (2M);
-        PROVIDE(pmmap_physical_size = . - pmmap_physical_base);
-	}
-
-    .physical_kernel_stack : ALIGN(4K)
-	{
-		PROVIDE(kernel_stack_physical_base = .);
-		. = . + (4M);
-		PROVIDE(kernel_stack_physical_size = . - kernel_stack_physical_base);
-	}
-
-    system_reserved_end = .;
-	PROVIDE(system_reserved_size = system_reserved_end - kernel_physical_base);
-
-	PROVIDE(heap_physical_base = .);
+	PROVIDE(kernel_physical_end = . + (3M));
 
 
 	/* place the kernel at the start of the higher half */
@@ -145,27 +81,20 @@ SECTIONS
 
 	.gdt : ALIGN (4K)
 	{
-		PROVIDE(gdt_base = .);
+		PROVIDE(gdt = .);
 		. = . + (64K);
 	}
 
 	.tss : ALIGN(4K)
 	{
-		PROVIDE(tss_base = .);
+		PROVIDE(default_tss = .);
 		. = . + (4K);
 	}
 
     .idt : ALIGN(4K)
 	{
-		PROVIDE(idt_base = .);
+		PROVIDE(idt = .);
 		. = . + (4K);
-	}
-
-	.print_mmap : ALIGN (4K)
-    {
-		PROVIDE(pmm_table = .);
-		. = . + (2M);
-		PROVIDE(pmm_table_size = pmmap_physical_size);
 	}
 
 
@@ -174,12 +103,12 @@ SECTIONS
 
 	.stack : ALIGN(4K)
 	{
-		PROVIDE(kernel_stack_base = .);
+		PROVIDE(kernel_stack = .);
 		*(.stack)
 		PROVIDE(kernel_stack_top = . + (16K));
 	}
 
     . = kernel_stack_top;
 
-    PROVIDE(.heap_base = .);
+    PROVIDE(heap = .);
 }

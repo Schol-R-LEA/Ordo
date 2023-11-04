@@ -61,11 +61,19 @@ union GDT_Entry
 } __attribute__((packed));
 
 
-extern union GDT_Entry gdt[MAX_GDT_ENTRIES];
-
 extern void reload_segments();
 
 void reset_gdt();
+
+static inline void set_gdt_register(struct GDT_R gdt_r)
+{
+    __asm__ __volatile__ (
+        "        lgdt %0;"
+        :
+        : "m" (gdt_r));
+
+    reload_segments();
+}
 
 
 #endif

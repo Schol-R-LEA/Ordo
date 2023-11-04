@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "consts.h"
 #include "gdt.h"
 #include "tss.h"
 #include "terminal.h"
@@ -24,7 +25,7 @@ void print_gdt(union GDT_Entry *gdt)
     {
         kprintf("%d:\t", i);
         print_gdt_entry(&gdt[i]);
-    } 
+    }
 }
 
 
@@ -55,9 +56,9 @@ void set_gdt_entry(union GDT_Entry *entry, uint32_t limit, uint32_t base, bool e
 
 void reset_gdt()
 {
-    struct GDT_R gdt_r = { GDT_SIZE, (union GDT_Entry *) gdt_base };
+    struct GDT_R gdt_r = { GDT_SIZE, (union GDT_Entry *) gdt_physical_base };
 
-    union GDT_Entry *entry = (union GDT_Entry *) gdt_base;
+    union GDT_Entry *entry = (union GDT_Entry *) gdt_physical_base;
 
     // first, clear the whole table'
     memset(entry, 0, GDT_SIZE);
@@ -71,7 +72,7 @@ void reset_gdt()
 
     // system TSS descriptor
     // kprintf("\nDefault TSS location %p\n", &tss_base);
-    set_gdt_entry(++entry, sizeof(struct TSS), (uint32_t) &tss_base, true, false, RING_0);
+    set_gdt_entry(++entry, sizeof(struct TSS), (uint32_t) &default_tss, true, false, RING_0);
     entry->fields.access.accessed = true;
     entry->fields.access.non_sys = false;
     entry->fields.limit_and_flags.bits_32 = false;
@@ -83,15 +84,7 @@ void reset_gdt()
     set_gdt_entry(++entry, 0x000fffff, 0, false, true, RING_3);
 
 
-    //print_gdt(gdt);
+    // print_gdt(gdt_physical_base);
 
-
-    // set the GDT register
- 
-    __asm__ __volatile__ (
-        "        lgdt %0;"
-        :
-        : "m" (gdt_r));
-
-    reload_segments();
+    set_gdt_register(gdt_r);
 }

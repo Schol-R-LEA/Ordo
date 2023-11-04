@@ -13,8 +13,6 @@
 #define PAGE_DATA_SIZE (PAGE_SIZE - sizeof(struct Page_Header*))
 
 
-#define pmm_bitwidth (sizeof(pmm_table[0]) * 8)
-
 
 struct boot_memory_map_entry
 {
@@ -37,16 +35,6 @@ enum VM_Type : uint8_t
 };
 
 
-struct PMM_Entry
-{
-    struct PMM_Entry *previous;
-    struct PMM_Entry *next;
-    enum PM_Type type;
-    size_t address;
-    size_t span;
-};
-
-
 struct Page_Header
 {
     struct Free_List_Entry *next;
@@ -60,11 +48,6 @@ struct Free_List_Entry
 } __attribute__((packed));
 
 
-
-extern uint64_t pmm_table[];
-extern uint8_t pmm_table_size;
-
-extern struct Free_List_Entry heap;
 extern struct Free_List_Entry *heap_top;
 
 
@@ -92,34 +75,6 @@ static inline bool addr_in_range(void* address, void* low, void* high)
 }
 
 
-
-static inline void set_pmm_entry(size_t index)
-{
-    size_t byte_index = index / pmm_bitwidth;
-    size_t bit_index = index % pmm_bitwidth;
-
-    pmm_table[byte_index] = pmm_table[byte_index] | (1 << bit_index);
-}
-
-
-static inline void clear_pmm_entry(size_t index)
-{
-    size_t byte_index = index / 64;
-    size_t bit_index = index % 64;
-
-    pmm_table[byte_index] = pmm_table[byte_index] & ~(1 << bit_index);
-}
-
-
-static inline bool get_pmm_entry(size_t index)
-{
-    size_t byte_index = index / 64;
-    size_t bit_index = index % 64;
-
-    return (bool) ((pmm_table[byte_index] & (1 << bit_index)) >> bit_index);
-}
-
-
 void print_boot_mmap(uint32_t count, struct boot_memory_map_entry table[]);
 size_t get_total_mem(uint32_t count, struct boot_memory_map_entry table[]);
 size_t *get_mem_start(uint32_t count, struct boot_memory_map_entry table[]);
@@ -129,7 +84,6 @@ void* memset(void *ptr,  char value, size_t num);
 void* memcpy(void *destination, void *source, size_t num);
 void memdump(void* src, uint32_t size);
 
-void init_physical_memory_map(uint32_t count, struct boot_memory_map_entry table[]);
 size_t init_heap(size_t* mem_start, size_t* mem_top);
 
 void kfree(void* start);

@@ -14,7 +14,5 @@ struct TSS
              ldtr_reg, iopb, ssp;
 };
 
-extern struct TSS *default_tss;
-
 
 #endif

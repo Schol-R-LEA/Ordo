@@ -50,9 +50,6 @@ struct Interrupt_Frame
 } __attribute__((packed));
 
 
-extern struct Interrupt_Descriptor_32 idt[IDT_SIZE];
-
-
 static inline void enable_interrupts()
 {
     __asm__("sti");
