@@ -16,8 +16,8 @@ const size_t page_directory_size = PD_SIZE;
 const size_t page_tables_size = (16 * MBYTE);
 
 const size_t gdt_physical_size = 0x00010000;
-const size_t tss_physical_size = 0x00001000;      //provide ample space for the TSS data structure
-const size_t idt_physical_size = sizeof(struct Interrupt_Descriptor_32) * IDT_SIZE;
+const size_t tss_physical_size = PAGE_SIZE;      // round both TSS and IDT allocations up 
+const size_t idt_physical_size = PAGE_SIZE;      // to the size of a page
 
 
 // kernel stack is set to 16KiB

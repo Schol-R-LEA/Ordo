@@ -26,11 +26,11 @@ void kernel_main()
 
     set_fg(GRAY);
 
-    kprintf("Moving the memory map\n");
+    kprintf("\nMoving the memory map\n");
     memcpy(&boot_data, _boot_data, sizeof(struct kdata));
     print_boot_mmap(boot_data.mmap_cnt, boot_data.mem_table);
 
-    kprintf("kernel base address %p, kernel end address %p, %u b\n", &kernel_physical_base, &kernel_physical_end, (size_t) &kernel_end - (size_t) &kernel_base);
+    kprintf("\nkernel base address %p, kernel end address %p, %u b\n", &kernel_physical_base, &kernel_physical_end, (size_t) &kernel_end - (size_t) &kernel_base);
     kprintf("initial boot data %p, computed location %p, %u b\n", _boot_data, ((uint8_t *) &kernel_boot_data_physical_base - 16), kernel_boot_data_physical_size);
     total_mem = get_total_mem(boot_data.mmap_cnt, boot_data.mem_table);
     kprintf("Total memory: %u MiB\n", total_mem / MBYTE);
@@ -38,16 +38,16 @@ void kernel_main()
     kprintf("top of free memory: %p\n", mem_top);
 
     kprintf("kernel code memory footprint %u bytes\n", kernel_effective_size);
-    kprintf("boot data @%p, %ub\n", &boot_data, sizeof(struct kdata));
+    kprintf("boot data @%p, %u bytes\n", &boot_data, sizeof(struct kdata));
 
-    kprintf("page directory @%p, %ub\n", page_directory, page_directory_size);
-    kprintf("page tables @%p, %ub\n", page_tables, page_tables_size);
+    kprintf("page directory @%p, %u bytes\n", page_directory, page_directory_size);
+    kprintf("page tables @%p, %u bytes\n", page_tables, page_tables_size);
 
-    kprintf("GDT @%p phys, @%p va, %ub, ", gdt_physical_base, &gdt, gdt_physical_size);
-    kprintf("TSS @%p, @%p va, %ub, ", tss_physical_base, &default_tss, tss_physical_size);
-    kprintf("IDT @%p, @%p va, %ub\n", idt_physical_base, &idt, idt_physical_size);
+    kprintf("GDT @%p phys, @%p va, %u bytes\n", gdt_physical_base, &gdt, gdt_physical_size);
+    kprintf("TSS @%p phys, @%p va, %u bytes\n", tss_physical_base, &default_tss, tss_physical_size);
+    kprintf("IDT @%p phys, @%p va, %u bytes\n", idt_physical_base, &idt, idt_physical_size);
 
-    kprintf("Stack @%p, @%p va, %ub\n", kernel_stack_physical_base, &kernel_stack, kernel_stack_physical_size);
+    kprintf("Stack @%p phys, @%p va, %u bytes\n", kernel_stack_physical_base, &kernel_stack, kernel_stack_physical_size);
 
     heap_size = (size_t) mem_top - (size_t) heap_physical_base;
 
