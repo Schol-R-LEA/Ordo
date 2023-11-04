@@ -30,8 +30,8 @@ void kernel_main()
     memcpy(&boot_data, _boot_data, sizeof(struct kdata));
     print_boot_mmap(boot_data.mmap_cnt, boot_data.mem_table);
 
-    kprintf("\nkernel base address %p, kernel end address %p, %u b\n", &kernel_physical_base, &kernel_physical_end, (size_t) &kernel_end - (size_t) &kernel_base);
-    kprintf("initial boot data %p, computed location %p, %u b\n", _boot_data, ((uint8_t *) &kernel_boot_data_physical_base - 16), kernel_boot_data_physical_size);
+    kprintf("\nkernel @%p phys, end @%p pyhs, %u bytes\n", &kernel_physical_base, &kernel_physical_end, (size_t) &kernel_end - (size_t) &kernel_base);
+    kprintf("initial boot data @%p, computed location @%p, %u bytes\n", _boot_data, ((uint8_t *) &kernel_boot_data_physical_base - 16), kernel_boot_data_physical_size);
     total_mem = get_total_mem(boot_data.mmap_cnt, boot_data.mem_table);
     kprintf("Total memory: %u MiB\n", total_mem / MBYTE);
     mem_top = get_mem_top(boot_data.mmap_cnt, boot_data.mem_table);
@@ -51,8 +51,8 @@ void kernel_main()
 
     heap_size = (size_t) mem_top - (size_t) heap_physical_base;
 
-    kprintf("heap start: %p, heap size: %d MiB\n", heap, heap_size / MBYTE);
-
+    //kprintf("heap start: %p phys, %p va, heap size: %d MiB\n", heap_physical_base, heap, heap_size / MBYTE);
+    kprintf("heap start: %p phys, heap size: %d MiB\n", heap_physical_base, heap_size / MBYTE);
     panic("");
 
 

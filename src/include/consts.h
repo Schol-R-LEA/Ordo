@@ -12,11 +12,11 @@
 
 #define page_directory_offset 0x000400000
 #define page_tables_offset (page_directory_offset + PD_SIZE)
-#define gdt_physical_offset (page_tables_offset + (16 + MBYTE))
-#define tss_physical_offset (gdt_physical_offset + 0x00010000)
-#define idt_physical_offset (tss_physical_offset + 0x00001000)
-#define stack_physical_offset (idt_physical_offset + 0x00001000)
-#define heap_physical_offset (stack_physical_offset + 0x00004000)
+#define gdt_physical_offset (page_tables_offset + (16 * MBYTE))
+#define tss_physical_offset (gdt_physical_offset + (64 * KBYTE))
+#define idt_physical_offset (tss_physical_offset + PAGE_SIZE)
+#define stack_physical_offset (idt_physical_offset + PAGE_SIZE)
+#define heap_physical_offset (stack_physical_offset + (16 * KBYTE))
 
 
 // addresses imported from linker script

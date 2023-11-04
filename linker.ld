@@ -108,7 +108,4 @@ SECTIONS
 		PROVIDE(kernel_stack_top = . + (16K));
 	}
 
-    . = kernel_stack_top;
-
-    PROVIDE(heap = .);
 }
