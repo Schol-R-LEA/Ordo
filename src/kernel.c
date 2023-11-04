@@ -30,7 +30,7 @@ void kernel_main()
     memcpy(&boot_data, _boot_data, sizeof(struct kdata));
     print_boot_mmap(boot_data.mmap_cnt, boot_data.mem_table);
 
-    kprintf("\nkernel @%p phys, end @%p pyhs, %u bytes\n", &kernel_physical_base, &kernel_physical_end, (size_t) &kernel_end - (size_t) &kernel_base);
+    kprintf("\nkernel @%p phys, end @%p phys, %u bytes\n", &kernel_physical_base, &kernel_physical_end, (size_t) &kernel_end - (size_t) &kernel_base);
     kprintf("initial boot data @%p, computed location @%p, %u bytes\n", _boot_data, ((uint8_t *) &kernel_boot_data_physical_base - 16), kernel_boot_data_physical_size);
     total_mem = get_total_mem(boot_data.mmap_cnt, boot_data.mem_table);
     kprintf("Total memory: %u MiB\n", total_mem / MBYTE);
@@ -40,20 +40,19 @@ void kernel_main()
     kprintf("kernel code memory footprint %u bytes\n", kernel_effective_size);
     kprintf("boot data @%p, %u bytes\n", &boot_data, sizeof(struct kdata));
 
-    kprintf("page directory @%p, %u bytes\n", page_directory, page_directory_size);
-    kprintf("page tables @%p, %u bytes\n", page_tables, page_tables_size);
+    kprintf("page directory @%p, %u bytes\n", page_directory_offset, page_directory_size);
+    kprintf("page tables @%p, %u bytes\n", page_tables_offset, page_tables_size);
 
-    kprintf("GDT @%p phys, @%p va, %u bytes\n", gdt_physical_base, &gdt, gdt_physical_size);
-    kprintf("TSS @%p phys, @%p va, %u bytes\n", tss_physical_base, &default_tss, tss_physical_size);
-    kprintf("IDT @%p phys, @%p va, %u bytes\n", idt_physical_base, &idt, idt_physical_size);
+    kprintf("GDT   @%p phys, @%p va, %u bytes\n", gdt_physical_offset, &gdt, gdt_physical_size);
+    kprintf("TSS   @%p phys, @%p va, %u bytes\n", tss_physical_offset, &default_tss, tss_physical_size);
+    kprintf("IDT   @%p phys, @%p va, %u bytes\n", idt_physical_offset, &idt, idt_physical_size);
 
-    kprintf("Stack @%p phys, @%p va, %u bytes\n", kernel_stack_physical_base, &kernel_stack, kernel_stack_physical_size);
+    kprintf("Stack @%p phys, @%p va, %u bytes\n", stack_physical_offset, &kernel_stack, kernel_stack_physical_size);
 
-    heap_size = (size_t) mem_top - (size_t) heap_physical_base;
+    heap_size = (size_t) mem_top - (size_t) heap_physical_offset;
 
     //kprintf("heap start: %p phys, %p va, heap size: %d MiB\n", heap_physical_base, heap, heap_size / MBYTE);
-    kprintf("heap start: %p phys, heap size: %d MiB\n", heap_physical_base, heap_size / MBYTE);
-    panic("");
+    kprintf("heap  @%p phys, heap size: %d MiB\n", heap_physical_offset, heap_size / MBYTE);
 
 
     get_cpu_details();
@@ -64,11 +63,19 @@ void kernel_main()
     reset_gdt();
     kprintf("GDT reset\n");
 
+    kprintf("Disabling 8259A PIC\n");
     disable_legacy_timer();
-    init_default_interrupts();
-    enable_interrupts();
 
-    //reset_default_paging(heap_size);
+    kprintf("Initializing interrupts...");
+    init_default_interrupts();
+    kprintf(" enabling...");
+    enable_interrupts();
+    kprintf("Interrupts enabled.\n");
+
+
+    kprintf("resetting paging... ");
+    // reset_default_paging(heap_size);
+    kprintf("paging reset.\n");
 
     //size_t pg_count = init_heap(heap_entry_point, mem_top);
     //kprintf("Pages initialized: %u\n", pg_count);

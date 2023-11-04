@@ -56,9 +56,9 @@ void set_gdt_entry(union GDT_Entry *entry, uint32_t limit, uint32_t base, bool e
 
 void reset_gdt()
 {
-    struct GDT_R gdt_r = { GDT_SIZE, (union GDT_Entry *) gdt_physical_base };
+    struct GDT_R gdt_r = { GDT_SIZE, (union GDT_Entry *) gdt_physical_offset };
 
-    union GDT_Entry *entry = (union GDT_Entry *) gdt_physical_base;
+    union GDT_Entry *entry = (union GDT_Entry *) gdt_physical_offset;
 
     // first, clear the whole table'
     memset(entry, 0, GDT_SIZE);

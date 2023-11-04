@@ -202,27 +202,24 @@ void reset_default_paging(size_t heap_size)
     set_page_block(0, 0, 0x00100000, true, false, false, false);
 
     // identity map the kernel region
-    set_page_block(kernel_physical_base, kernel_physical_base, kernel_effective_size, true, false, false, false);
+    set_page_block(&kernel_physical_base, &kernel_physical_base, kernel_effective_size, true, false, false, false);
 
 
     // identity map the section for the page directory and page tables
     // these need to have physical addresses, not virtual ones
-    set_page_block(page_tables, page_tables, page_tables_size,  true, false, false, false);
-    set_page_block(page_directory, page_directory, page_directory_size, true, false, false, false);
+    set_page_block(page_directory_offset, page_directory_offset, page_directory_size, true, false, false, false);
+    set_page_block(page_tables_offset, page_tables_offset, page_tables_size,  true, false, false, false);
 
-    // map in the kernel region
-    set_page_block(kernel_physical_base, &kernel_base, kernel_effective_size, true, false, false, false);
-
+    // map in the kernel region in the higher half
+    set_page_block(&kernel_physical_base, &kernel_base, kernel_effective_size, true, false, false, false);
 
     // map in the other various tables
-    set_page_block(gdt_physical_base, &gdt, gdt_physical_size, true, false, false, false);
-    set_page_block(tss_physical_base, &default_tss, tss_physical_size, true, false, false, false);
-    set_page_block(idt_physical_base, &idt, idt_physical_size, true, false, false, false);
-
+    set_page_block(gdt_physical_offset, &gdt, gdt_physical_size, true, false, false, false);
+    set_page_block(tss_physical_offset, &default_tss, tss_physical_size, true, false, false, false);
+    set_page_block(idt_physical_offset, &idt, idt_physical_size, true, false, false, false);
 
     // map in the stack
-    set_page_block(kernel_stack_physical_base, &kernel_stack, (size_t) kernel_stack_physical_size, true, false, false, false);
-
+    set_page_block(stack_physical_offset, &kernel_stack, (size_t) kernel_stack_physical_size, true, false, false, false);
 
     page_reset();
 }
