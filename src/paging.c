@@ -24,23 +24,23 @@ void set_page_directory_entry(uint32_t index,
     union Page_Table_Entry *pte_address = (union Page_Table_Entry *) page_tables_offset + (pt_entry + (index * PT_ENTRY_COUNT));
     size_t address_field = (size_t) pte_address >> 12;
 
-    if (pte_address < page_tables_offset || pte_address >= (union Page_Table_Entry *) gdt_physical_offset)
+    // SANITY CHECK - is this within the table?
+    if (pte_address < page_tables_offset || pte_address >= (union Page_Table_Entry *) page_directory_offset)
     {
         kprintf("\n%p: ", pte_address);
         panic("Invalid page table entry address");
     }
 
-    // clear the directory entry
     union Page_Directory_Entry *entry = (union Page_Directory_Entry *) page_directory_offset + index;
 
-
-    if (entry < page_directory_offset || entry >= (union Page_Directory_Entry *) page_tables_offset)
+    // SANITY CHECK - is this within the directory?
+    if (entry < page_directory_offset || entry >= (union Page_Directory_Entry *) kernel_stack_physical_offset)
     {
         kprintf("\n%p: ", entry);
         panic("Invalid directory entry address");
     }
 
-
+    // clear the directory entry
     memset(entry, 0, sizeof(union Page_Directory_Entry));
 
     entry->fields.present = true;
@@ -67,13 +67,14 @@ void set_page_table_entry(uint32_t de,
     size_t address_field = (size_t) address >> 12;
 
 
-    // SANITY CHECK - does this overrun the table?
+    // SANITY CHECK - does this overrun the directory?
     if (de > PD_ENTRY_COUNT)
     {
         kprintf("\n%x: ", de);
         panic("Invalid directory entry");
     }
 
+    // SANITY CHECK - does this overrun the table?
     if (index > (PT_ENTRY_COUNT * PD_ENTRY_COUNT))
     {
         kprintf("\n%x: ", index);
@@ -84,6 +85,7 @@ void set_page_table_entry(uint32_t de,
 
     union Page_Table_Entry *entry = page_tables_offset + index;
 
+    // SANITY CHECK - is this within the table?
     if (entry < page_tables_offset || entry >= (union Page_Table_Entry *) gdt_physical_offset)
     {
         kprintf("\n%p: ", entry);
@@ -110,7 +112,7 @@ struct Page_Directory_Frame
 };
 
 
-struct Page_Directory_Frame* get_frame(struct Page_Directory_Frame *frame, const void *virt_address, size_t block_size)
+struct Page_Directory_Frame* get_frame(struct Page_Directory_Frame *frame, void *virt_address, size_t block_size)
 {
     // determine the page directory entry and page table entry
     // corresponding to the virtual address
@@ -131,8 +133,8 @@ struct Page_Directory_Frame* get_frame(struct Page_Directory_Frame *frame, const
 
 
 /* set a block of page directory and page table entries matching a block of memory */
-void set_page_block(const void *phys_address,
-                    const void *virt_address,
+void set_page_block(void *phys_address,
+                    void *virt_address,
                     const size_t block_size,
                     bool rw, bool user,
                     bool write_thru,
@@ -226,21 +228,20 @@ void reset_default_paging(size_t heap_size)
 
     // identity map the section for the page directory and page tables
     // these need to have physical addresses, not virtual ones
+    set_page_block(page_tables_offset, page_tables_offset, page_tables_size, true, false, false, false);
     set_page_block(page_directory_offset, page_directory_offset, page_directory_size, true, false, false, false);
-    set_page_block(page_tables_offset, page_tables_offset, page_tables_size,  true, false, false, false);
-
 
     // map in the kernel region in the higher half
     set_page_block(&kernel_physical_base, &kernel_base, kernel_effective_size, true, false, false, false);
+
 
     // map in the other various tables
     set_page_block(gdt_physical_offset, &gdt, gdt_physical_size, true, false, false, false);
     set_page_block(tss_physical_offset, &default_tss, tss_physical_size, true, false, false, false);
     set_page_block(idt_physical_offset, &idt, idt_physical_size, true, false, false, false);
 
-
     // map in the stack
-    set_page_block(stack_physical_offset, &kernel_stack, kernel_stack_physical_size, true, false, false, false);
+    set_page_block(kernel_stack_physical_offset, &kernel_stack, kernel_stack_physical_size, true, false, false, false);
 
     page_reset();
 }

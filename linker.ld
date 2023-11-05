@@ -56,7 +56,7 @@ SECTIONS
 		*(.data)
 	}
 
-	/* Read-write data (uninitialized) and stack */
+	/* Read-write data (uninitialized) */
 	.bss : ALIGN(4K)
 	{
 		*(COMMON)
@@ -105,7 +105,7 @@ SECTIONS
 	{
 		PROVIDE(kernel_stack = .);
 		*(.stack)
-		PROVIDE(kernel_stack_top = . + (16K));
+		PROVIDE(kernel_stack_top = . + (16K) - 4);
 	}
 
 }

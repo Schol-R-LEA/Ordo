@@ -2,7 +2,6 @@
 #define PAGING_H
 
 #include "kernel.h"
-#include "consts.h"
 #include "mem.h"
 
 
@@ -70,14 +69,14 @@ void set_page_directory_entry(uint32_t index, size_t pt_entry, bool rw, bool use
 
 void set_page_table_entry(uint32_t de, uint32_t te, void* address, bool rw, bool user, bool write_thru, bool no_caching);
 
-void set_page_block(const void* phys_address, const void* virt_address, const size_t block_size, bool rw, bool user, bool write_thru, bool no_caching);
+void set_page_block(void* phys_address, void* virt_address, const size_t block_size, bool rw, bool user, bool write_thru, bool no_caching);
 
 void reset_default_paging(size_t heap_size);
 
 
 inline static void page_reset(void)
 {
-    extern const union Page_Directory_Entry *page_directory;
+    union Page_Directory_Entry *page_directory = (union Page_Directory_Entry *) 0x00140000;
 
     // reset the paging address control register
     // to point to the new page directory

@@ -40,14 +40,14 @@ void kernel_main()
     kprintf("kernel code memory footprint %u bytes\n", kernel_effective_size);
     kprintf("boot data @%p, %u bytes\n", &boot_data, sizeof(struct kdata));
 
-    kprintf("page directory @%p, %u bytes\n", page_directory_offset, page_directory_size);
     kprintf("page tables @%p, %u bytes\n", page_tables_offset, page_tables_size);
+    kprintf("page directory @%p, %u bytes\n", page_directory_offset, page_directory_size);
+
+    kprintf("Stack @%p phys, @%p va, %u bytes, top @%p\n", kernel_stack_physical_offset, &kernel_stack, kernel_stack_physical_size, &kernel_stack_top);
 
     kprintf("GDT   @%p phys, @%p va, %u bytes\n", gdt_physical_offset, &gdt, gdt_physical_size);
     kprintf("TSS   @%p phys, @%p va, %u bytes\n", tss_physical_offset, &default_tss, tss_physical_size);
     kprintf("IDT   @%p phys, @%p va, %u bytes\n", idt_physical_offset, &idt, idt_physical_size);
-
-    kprintf("Stack @%p phys, @%p va, %u bytes\n", stack_physical_offset, &kernel_stack, kernel_stack_physical_size);
 
     heap_size = (size_t) mem_top - (size_t) heap_physical_offset;
 
@@ -80,7 +80,7 @@ void kernel_main()
     //size_t pg_count = init_heap(heap_entry_point, mem_top);
     //kprintf("Pages initialized: %u\n", pg_count);
 
-    // init_acpi();
+    //init_acpi();
 
     set_fg(BLACK);
     set_bg(CYAN);
