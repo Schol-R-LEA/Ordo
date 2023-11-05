@@ -2,11 +2,6 @@
 #include <stdint.h>
 #include "consts.h"
 #include "kernel.h"
-#include "gdt.h"
-#include "tss.h"
-#include "idt.h"
-#include "mem.h"
-
 
 // provision 3M for the kernel, regardless of its actual size
 const size_t kernel_effective_size = 0x00300000;
@@ -22,6 +17,6 @@ const size_t idt_physical_size = PAGE_SIZE;      // to the size of a page
 
 
 // kernel stack is set to 16KiB
-const size_t kernel_stack_physical_size = 16 * KBYTE;
+const size_t kernel_stack_physical_size = (16 * KBYTE);
 
 const size_t tables_physical_size = (4 * MBYTE);

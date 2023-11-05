@@ -22,7 +22,6 @@
 #define tss_physical_offset ((struct TSS *) ((size_t) gdt_physical_offset + (64 * KBYTE)))
 #define idt_physical_offset ((struct Interrupt_Descriptor_32 *) ((size_t) tss_physical_offset + PAGE_SIZE))
 
-
 #define heap_physical_offset ((struct Free_List_Entry *) ((size_t) tables_physical_offset + 4 * MBYTE))
 
 

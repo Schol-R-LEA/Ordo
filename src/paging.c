@@ -21,7 +21,8 @@ void set_page_directory_entry(uint32_t index,
         panic("Invalid directory entry index");
     }
 
-    union Page_Table_Entry *pte_address = (union Page_Table_Entry *) page_tables_offset + (pt_entry + (index * PT_ENTRY_COUNT));
+    union Page_Table_Entry *pte_address = &(page_tables_offset[pt_entry + (index * PT_ENTRY_COUNT)]);
+
     size_t address_field = (size_t) pte_address >> 12;
 
     // SANITY CHECK - is this within the table?
@@ -31,7 +32,7 @@ void set_page_directory_entry(uint32_t index,
         panic("Invalid page table entry address");
     }
 
-    union Page_Directory_Entry *entry = (union Page_Directory_Entry *) page_directory_offset + index;
+    union Page_Directory_Entry *entry = &(page_directory_offset[index]);
 
     // SANITY CHECK - is this within the directory?
     if (entry < page_directory_offset || entry >= (union Page_Directory_Entry *) kernel_stack_physical_offset)
@@ -43,16 +44,16 @@ void set_page_directory_entry(uint32_t index,
     // clear the directory entry
     memset(entry, 0, sizeof(union Page_Directory_Entry));
 
-    entry->fields.present = true;
-    entry->fields.read_write = rw;
-    entry->fields.user = user;
-    entry->fields.write_thru = write_thru;
-    entry->fields.cache_disable = no_caching;
-    entry->fields.accessed = false;
-    entry->fields.dirty = false;
-    entry->fields.page_size = false;
-    entry->fields.available = 0;
-    entry->fields.address = address_field;
+    page_directory_offset[index].fields.present = true;
+    page_directory_offset[index].fields.read_write = rw;
+    page_directory_offset[index].fields.user = user;
+    page_directory_offset[index].fields.write_thru = write_thru;
+    page_directory_offset[index].fields.cache_disable = no_caching;
+    page_directory_offset[index].fields.accessed = false;
+    page_directory_offset[index].fields.dirty = false;
+    page_directory_offset[index].fields.page_size = false;
+    page_directory_offset[index].fields.available = 0;
+    page_directory_offset[index].fields.address = address_field;
 }
 
 
@@ -83,7 +84,7 @@ void set_page_table_entry(uint32_t de,
 
     //kprintf("Page dir:table = %x:%x -> index %x, address field: %x\n", de, te, index, address_field);
 
-    union Page_Table_Entry *entry = page_tables_offset + index;
+    union Page_Table_Entry *entry = &(page_tables_offset[index]);
 
     // SANITY CHECK - is this within the table?
     if (entry < page_tables_offset || entry >= (union Page_Table_Entry *) gdt_physical_offset)
@@ -92,18 +93,17 @@ void set_page_table_entry(uint32_t de,
         panic("Invalid table entry address");
     }
 
-
-    entry->fields.present = true;
-    entry->fields.read_write = rw;
-    entry->fields.user = user;
-    entry->fields.write_thru = write_thru;
-    entry->fields.cache_disable = no_caching;
-    entry->fields.accessed = false;
-    entry->fields.dirty = false;
-    entry->fields.page_attribute_table = false;
-    entry->fields.global = false;
-    entry->fields.available = 0;
-    entry->fields.address = address_field;
+    page_tables_offset[index].fields.present = true;
+    page_tables_offset[index].fields.read_write = rw;
+    page_tables_offset[index].fields.user = user;
+    page_tables_offset[index].fields.write_thru = write_thru;
+    page_tables_offset[index].fields.cache_disable = no_caching;
+    page_tables_offset[index].fields.accessed = false;
+    page_tables_offset[index].fields.dirty = false;
+    page_tables_offset[index].fields.page_attribute_table = false;
+    page_tables_offset[index].fields.global = false;
+    page_tables_offset[index].fields.available = 0;
+    page_tables_offset[index].fields.address = address_field;
 }
 
 struct Page_Directory_Frame
@@ -231,16 +231,24 @@ void reset_default_paging(size_t heap_size)
     set_page_block(page_tables_offset, page_tables_offset, page_tables_size, true, false, false, false);
     set_page_block(page_directory_offset, page_directory_offset, page_directory_size, true, false, false, false);
 
+
+    // identity map the stack
+    set_page_block(kernel_stack_physical_offset, kernel_stack_physical_offset, kernel_stack_physical_size, true, false, false, false);
+
+    // identity map the free heap
+    set_page_block(heap_physical_offset, heap_physical_offset, heap_size, true, false, false, false);
+
+
     // map in the kernel region in the higher half
     set_page_block(&kernel_physical_base, &kernel_base, kernel_effective_size, true, false, false, false);
 
 
-    // map in the other various tables
+    // map in the other various tables in the higher half
     set_page_block(gdt_physical_offset, &gdt, gdt_physical_size, true, false, false, false);
     set_page_block(tss_physical_offset, &default_tss, tss_physical_size, true, false, false, false);
     set_page_block(idt_physical_offset, &idt, idt_physical_size, true, false, false, false);
 
-    // map in the stack
+    // map in the stack in the higher half
     set_page_block(kernel_stack_physical_offset, &kernel_stack, kernel_stack_physical_size, true, false, false, false);
 
     page_reset();
