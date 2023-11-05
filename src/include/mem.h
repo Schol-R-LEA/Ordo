@@ -64,9 +64,9 @@ struct Free_List_Entry
 extern uint64_t pmm_table[];
 extern uint8_t pmm_table_size;
 
-extern struct Free_List_Entry heap;
-extern struct Free_List_Entry *heap_top;
-
+extern uint8_t *kernel_physical_base;
+extern uint8_t *kernel_physical_top;
+extern struct Free_List_Entry *heap;
 
 static inline void* page_round_up(void* value)
 {
@@ -122,15 +122,15 @@ static inline bool get_pmm_entry(size_t index)
 
 void print_boot_mmap(uint32_t count, struct boot_memory_map_entry table[]);
 size_t get_total_mem(uint32_t count, struct boot_memory_map_entry table[]);
-size_t *get_mem_start(uint32_t count, struct boot_memory_map_entry table[]);
-size_t *get_mem_top(uint32_t count, struct boot_memory_map_entry table[]);
+uint8_t *get_mem_start(uint32_t count, struct boot_memory_map_entry table[]);
+uint8_t *get_mem_top(uint32_t count, struct boot_memory_map_entry table[]);
 
 void* memset(void *ptr,  char value, size_t num);
 void* memcpy(void *destination, void *source, size_t num);
 void memdump(void* src, uint32_t size);
 
 void init_physical_memory_map(uint32_t count, struct boot_memory_map_entry table[]);
-size_t init_heap(size_t* mem_start, size_t* mem_top);
+size_t init_heap(uint8_t* mem_start, uint8_t* mem_top);
 
 void kfree(void* start);
 void* kmalloc(size_t size);

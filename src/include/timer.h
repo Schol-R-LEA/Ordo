@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+void disable_legacy_timer();
 void init_timer();
 void diasble_timer();
 void enable_timer();

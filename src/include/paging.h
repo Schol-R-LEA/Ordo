@@ -64,12 +64,27 @@ union Page_Table_Entry
 }__attribute__((packed));
 
 
-// extern union Page_Directory_Entry page_directory[PD_ENTRY_COUNT];
-// extern union Page_Table_Entry page_tables[PT_ENTRY_TOTAL_COUNT];
-
-
 extern union Page_Table_Entry *page_tables;
 extern union Page_Directory_Entry *page_directory;
+
+extern uint8_t *kernel_physical_base;
+extern size_t *kernel_stack, *kernel_stack_top;
+extern uint8_t *tables_top;
+
+
+/*
+extern size_t kernel_size;
+extern size_t page_table_size;
+extern size_t page_directory_size;
+extern size_t* kernel_stack_physical_base;
+extern size_t kernel_stack_size;
+extern size_t* tables_physical_base;
+extern size_t tables_size;
+extern size_t* heap_physical_base;
+extern size_t heap_size;
+*/
+
+//void init_paging_addresses(size_t *mem_top);
 
 void set_page_directory_entry(uint32_t index, size_t pt_entry, bool rw, bool user, bool write_thru, bool no_caching);
 
@@ -77,7 +92,7 @@ void set_page_table_entry(uint32_t de, uint32_t te, size_t address, bool rw, boo
 
 void set_page_block(uint32_t phys_address, uint32_t virt_address, uint32_t block_size, bool rw, bool user, bool write_thru, bool no_caching);
 
-void reset_default_paging(uint32_t map_size, struct boot_memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE], void* heap_start, size_t heap_size);
+void reset_default_paging(uint8_t *mem_start, uint8_t *mem_top);
 
 
 inline static void page_reset()
