@@ -17,15 +17,28 @@ void set_page_directory_entry(uint32_t index,
     // SANITY CHECK - does this overrun the table?
     if (index > PD_ENTRY_COUNT)
     {
-        kprintf("Invalid directory entry index: %x\n", index);
+        kprintf("\n%x: ", index);
         panic("Invalid directory entry index");
     }
 
-    size_t pte_address = (size_t) &page_tables[pt_entry + (index * PT_ENTRY_COUNT)];
-    size_t address_field = pte_address >> 12;
+    union Page_Table_Entry *pte_address = (union Page_Table_Entry *) page_tables_offset + (pt_entry + (index * PT_ENTRY_COUNT));
+    size_t address_field = (size_t) pte_address >> 12;
+
+    if (pte_address < page_tables_offset || pte_address >= (union Page_Table_Entry *) gdt_physical_offset)
+    {
+        kprintf("\n%p: ", pte_address);
+        panic("Invalid page table entry address");
+    }
 
     // clear the directory entry
-    union Page_Directory_Entry *entry = (union Page_Directory_Entry *) &page_directory[index];
+    union Page_Directory_Entry *entry = (union Page_Directory_Entry *) page_directory_offset + index;
+
+
+    if (entry < page_directory_offset || entry >= (union Page_Directory_Entry *) page_tables_offset)
+    {
+        kprintf("\n%p: ", entry);
+        panic("Invalid directory entry address");
+    }
 
 
     memset(entry, 0, sizeof(union Page_Directory_Entry));
@@ -57,19 +70,25 @@ void set_page_table_entry(uint32_t de,
     // SANITY CHECK - does this overrun the table?
     if (de > PD_ENTRY_COUNT)
     {
-        kprintf("Invalid directory entry: %x\n", de);
+        kprintf("\n%x: ", de);
         panic("Invalid directory entry");
     }
 
     if (index > (PT_ENTRY_COUNT * PD_ENTRY_COUNT))
     {
-        kprintf("Invalid table entry index: %x\n", index);
+        kprintf("\n%x: ", index);
         panic("Invalid table entry index");
     }
 
     //kprintf("Page dir:table = %x:%x -> index %x, address field: %x\n", de, te, index, address_field);
 
-    union Page_Table_Entry *entry = (union Page_Table_Entry *) &page_tables[index];
+    union Page_Table_Entry *entry = page_tables_offset + index;
+
+    if (entry < page_tables_offset || entry >= (union Page_Table_Entry *) gdt_physical_offset)
+    {
+        kprintf("\n%p: ", entry);
+        panic("Invalid table entry address");
+    }
 
 
     entry->fields.present = true;
@@ -126,25 +145,25 @@ void set_page_block(const void *phys_address,
     // SANITY CHECKS - make sure that the calculated values are sound
     if (frame.dir_start > PD_ENTRY_COUNT)
     {
-        kprintf("Invalid directory start: %x\n", frame.dir_start);
+        kprintf("%x: ", frame.dir_start);
         panic("Invalid directory start");
     }
 
     if (frame.dir_end > PD_ENTRY_COUNT)
     {
-        kprintf("Invalid directory endpoint: %x\n", frame.dir_end);
+        kprintf("%x: ", frame.dir_end);
         panic("Invalid directory endpoint");
     }
 
     if (frame.page_start > PT_ENTRY_COUNT)
     {
-        kprintf("Invalid page table entry start: %x\n", frame.page_start);
+        kprintf("%x: ", frame.page_start);
         panic("Invalid page table entry start");
     }
 
     if (frame.page_end > PT_ENTRY_COUNT)
     {
-        kprintf("Invalid page table entry endpoint: %x\n", frame.page_end);
+        kprintf("%x: ", frame.page_end);
         panic("Invalid page table entry endpoint");
     }
 
@@ -169,7 +188,7 @@ void set_page_block(const void *phys_address,
         // SANITY CHECK - does this overrun the table?
         if (pt_current_end > PT_ENTRY_COUNT)
         {
-            kprintf("Invalid local page table entry endpoint: %x\n", pt_current_end);
+            kprintf("%x: ", pt_current_end);
             panic("Invalid local page table entry endpoint");
         }
 
@@ -210,6 +229,7 @@ void reset_default_paging(size_t heap_size)
     set_page_block(page_directory_offset, page_directory_offset, page_directory_size, true, false, false, false);
     set_page_block(page_tables_offset, page_tables_offset, page_tables_size,  true, false, false, false);
 
+
     // map in the kernel region in the higher half
     set_page_block(&kernel_physical_base, &kernel_base, kernel_effective_size, true, false, false, false);
 
@@ -218,8 +238,9 @@ void reset_default_paging(size_t heap_size)
     set_page_block(tss_physical_offset, &default_tss, tss_physical_size, true, false, false, false);
     set_page_block(idt_physical_offset, &idt, idt_physical_size, true, false, false, false);
 
+
     // map in the stack
-    set_page_block(stack_physical_offset, &kernel_stack, (size_t) kernel_stack_physical_size, true, false, false, false);
+    set_page_block(stack_physical_offset, &kernel_stack, kernel_stack_physical_size, true, false, false, false);
 
     page_reset();
 }

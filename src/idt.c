@@ -7,7 +7,7 @@
 
 void idt_set_descriptor(uint8_t vector, void isr(struct Interrupt_Frame*), enum PRIVILEGE_LEVEL dpl, enum IDT_gate_type gate_type)
 {
-    struct Interrupt_Descriptor_32 *descriptor = (struct Interrupt_Descriptor_32 *) &idt[vector];
+    struct Interrupt_Descriptor_32 *descriptor = (struct Interrupt_Descriptor_32 *) ((size_t) &idt + (sizeof(struct Interrupt_Descriptor_32) * vector));
 
     descriptor->offset_low       = (uint16_t) ((uint32_t) isr & 0xFFFF);
     descriptor->segment_selector = system_code_selector;
@@ -26,7 +26,7 @@ __attribute__((interrupt)) void default_exception_handler(struct Interrupt_Frame
 }
 
 
-__attribute__((interrupt)) void div_zero_exception_handler(struct Interrupt_Frame* frame)
+__attribute__((interrupt)) void division_exception_handler(struct Interrupt_Frame* frame)
 {
     disable_interrupts();
     panic("\nException 0x00: ");
@@ -57,7 +57,7 @@ void init_default_interrupts()
     // initialize the values to put into the IDT register
     __attribute__((aligned(0x10))) static struct IDT_R idt_r;
 
-    idt_r.base = (uintptr_t) idt;
+    idt_r.base = (uintptr_t) &idt;
     idt_r.size = (uint16_t) sizeof(struct Interrupt_Descriptor_32) * IDT_SIZE - 1;
 
     // As a precaution, populate the IDT with default ISRs.
@@ -75,7 +75,7 @@ void init_default_interrupts()
 
 
     // add exception-specific handlers
-    idt_set_descriptor(0x00, div_zero_exception_handler, RING_0, TRAP_GATE_32);
+    idt_set_descriptor(0x00, division_exception_handler, RING_0, TRAP_GATE_32);
     idt_set_descriptor(0x08, double_fault_exception_handler, RING_0, TRAP_GATE_32);
     idt_set_descriptor(0x0E, page_fault_exception_handler, RING_0, TRAP_GATE_32);
     // add interrupt-specific handlers

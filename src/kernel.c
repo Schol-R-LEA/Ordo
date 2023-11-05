@@ -31,7 +31,7 @@ void kernel_main()
     print_boot_mmap(boot_data.mmap_cnt, boot_data.mem_table);
 
     kprintf("\nkernel @%p phys, end @%p phys, %u bytes\n", &kernel_physical_base, &kernel_physical_end, (size_t) &kernel_end - (size_t) &kernel_base);
-    kprintf("initial boot data @%p, computed location @%p, %u bytes\n", _boot_data, ((uint8_t *) &kernel_boot_data_physical_base - 16), kernel_boot_data_physical_size);
+    kprintf("initial boot data @%p, %u bytes\n", _boot_data, kernel_boot_data_physical_size);
     total_mem = get_total_mem(boot_data.mmap_cnt, boot_data.mem_table);
     kprintf("Total memory: %u MiB\n", total_mem / MBYTE);
     mem_top = get_mem_top(boot_data.mmap_cnt, boot_data.mem_table);
@@ -66,15 +66,15 @@ void kernel_main()
     kprintf("Disabling 8259A PIC\n");
     disable_legacy_timer();
 
-    kprintf("Initializing interrupts...");
+    kprintf("Initializing interrupts... ");
     init_default_interrupts();
-    kprintf(" enabling...");
+    kprintf("enabling... ");
     enable_interrupts();
-    kprintf("Interrupts enabled.\n");
+    kprintf("interrupts enabled.\n");
 
 
-    kprintf("resetting paging... ");
-    // reset_default_paging(heap_size);
+    kprintf("Resetting paging... ");
+    reset_default_paging(heap_size);
     kprintf("paging reset.\n");
 
     //size_t pg_count = init_heap(heap_entry_point, mem_top);

@@ -3,6 +3,7 @@
 #include "consts.h"
 #include "kernel.h"
 #include "gdt.h"
+#include "tss.h"
 #include "idt.h"
 #include "mem.h"
 
@@ -28,16 +29,16 @@ const size_t kernel_stack_physical_size = (16 * KBYTE);
 const struct kdata *kernel_boot_data_physical_base = (struct kdata *) (KDATA_OFFSET - sizeof(struct kdata) - 16);
 
 // Page directory and page tables
-const union Page_Directory_Entry *page_directory = (union Page_Directory_Entry *) page_directory_offset;
-const union Page_Table_Entry *page_tables = (union Page_Table_Entry *) page_tables_offset;
+const union Page_Directory_Entry *page_directory = page_directory_offset;
+const union Page_Table_Entry *page_tables = page_tables_offset;
 
 // GDT, default TSS, and IDT
-const union GDT_Entry *gdt_physical_base = (union GDT_Entry *) gdt_physical_offset;
-const struct TSS *tss_physical_base = (struct TSS *) tss_physical_offset;
-const struct Interrupt_Descriptor_32 *idt_physical_base = (struct Interrupt_Descriptor_32 *) idt_physical_offset;
+const union GDT_Entry *gdt_physical_base = gdt_physical_offset;
+const struct TSS *tss_physical_base = tss_physical_offset;
+const struct Interrupt_Descriptor_32 *idt_physical_base = idt_physical_offset;
 
 // kernel stack
-const size_t *kernel_stack_physical_base = (size_t *) stack_physical_offset;
+const size_t *kernel_stack_physical_base = stack_physical_offset;
 
 // start of free memory
-const struct Free_List_Entry *heap_physical_base = (struct Free_List_Entry *) heap_physical_offset;
+const struct Free_List_Entry *heap_physical_base = heap_physical_offset;

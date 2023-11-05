@@ -78,6 +78,7 @@ void reset_default_paging(size_t heap_size);
 inline static void page_reset(void)
 {
     extern const union Page_Directory_Entry *page_directory;
+
     // reset the paging address control register
     // to point to the new page directory
      __asm__ __volatile__ (
