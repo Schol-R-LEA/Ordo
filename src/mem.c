@@ -239,7 +239,7 @@ void init_heap(struct Free_List_Entry *heap_start, uint8_t* mem_top)
 {
     spinlock_init(&heap_memory.lock);
     heap_memory.start = (struct Free_List_Entry *) page_round_up(heap_start);
-    heap_memory.top = (struct Free_List_Entry *) page_round_down (mem_top - (PAGE_SIZE + (23 * MBYTE)));
+    heap_memory.top = (struct Free_List_Entry *) page_round_down (mem_top - PAGE_SIZE);
     heap_memory.size = (size_t) heap_memory.top - (size_t) heap_memory.start;
     heap_memory.free_list = (struct Free_List_Entry *) page_round_up(heap_memory.start);
 
