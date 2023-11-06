@@ -33,5 +33,6 @@
     "**/.*/**",
     "**/.vscode",
     "**/.vscode/**"
-  ]
+  ],
+  "codechecker.editor.showDatabaseDialog": false
 }

@@ -11,12 +11,13 @@ DISKSIZE = 1440
 CC=i686-elf-gcc
 LD=i686-elf-ld
 LINK_SCRIPT=linker.ld
-CFLAGS=-Wall -Werror -Wpedantic -std=c2x -ffreestanding -ggdb
+CFLAGS=-Wall -Werror -Wpedantic -Wunused -Wunused-result -std=c2x -ffreestanding -ggdb
 C_SRC=src
 C_INCLUDES=-I $(C_SRC)/include
 OBJPATH=obj
 KERNEL=kernel
 KSTART=kstart
+CPU=cpu
 GDT=gdt
 GDT_SET=gdt_set
 IDT=idt
@@ -24,6 +25,7 @@ TERMINAL=terminal
 MEM=mem
 PAGING=paging
 ACPI=acpi
+TIMER=timer
 
 
 install: boot stage2 link
@@ -39,10 +41,11 @@ install: boot stage2 link
 	rmdir temp
 	$(REIMAGE) convert -f raw -O qcow2 $(OBJPATH)/$(DISKTARGET) ordo.qcow2
 
-link: kstart kernel terminal mem idt acpi paging gdt
+
+link: kstart kernel cpu terminal mem gdt idt acpi paging timer
 	$(LD) -T $(LINK_SCRIPT)
 
-kernel: terminal paging mem idt gdt acpi
+kernel: cpu terminal paging mem idt gdt acpi timer
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(KERNEL).c -o $(OBJPATH)/$(KERNEL).o
 
 acpi: terminal
@@ -63,6 +66,12 @@ mem: terminal
 
 terminal:
 	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(TERMINAL).c -o $(OBJPATH)/$(TERMINAL).o
+
+timer:
+	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(TIMER).c -o $(OBJPATH)/$(TIMER).o
+
+cpu:
+	$(CC) $(CFLAGS) $(C_INCLUDES) -c $(C_SRC)/$(CPU).c -o $(OBJPATH)/$(CPU).o
 
 kstart:
 	$(ASM) -f elf32 $(C_SRC)/$(KSTART).asm -o $(OBJPATH)/$(KSTART).o -l $(OBJPATH)/$(KSTART).lst

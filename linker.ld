@@ -5,6 +5,7 @@ ENTRY(kstart)
 
 INPUT(
 	obj/kernel.o
+	obj/cpu.o
 	obj/terminal.o
 	obj/mem.o
 	obj/idt.o
@@ -12,6 +13,7 @@ INPUT(
 	obj/gdt_set.o
     obj/paging.o
 	obj/acpi.o
+	obj/timer.o
 )
 
 
@@ -24,21 +26,13 @@ STARTUP(obj/kstart.o)
    kernel image. */
 SECTIONS
 {
-	/* place the identity-mapped section for
-	   the page directory and page tables at the 4MiB
-	   point in physical memory (i.e., past the
-	   1MiB low memory plus the 3MiB kernel space). */
-    /*
-    . = 0x000400000;
-
-    .paging : ALIGN(4K)
+	.physical_kernel : ALIGN(4K)
 	{
-		page_tables = .;
-		. = . + (4M);
-		page_directory = .;
-        . = . + 4K;
-	} */
-
+        . = (1M);
+        PROVIDE(kernel_physical_base = .);
+		. = (3M);
+        PROVIDE(kernel_physical_top = .);
+	}
 
 	/* place the kernel at the start of the higher half */
 	. = 0xC0000000;
@@ -46,7 +40,7 @@ SECTIONS
 	/* the .text section. */
 	.text : ALIGN(4K)
 	{
-		kernel_base = .;
+		PROVIDE(kernel_base = .);
 		*(.text)
 	}
 
@@ -68,6 +62,9 @@ SECTIONS
 		*(COMMON)
 		*(.bss)
 	}
+
+    . = 0xC03FFFFF;
+    PROVIDE(kernel_end = .);
 
     /* hardware tables */
     . = 0xC0400000;
@@ -101,14 +98,31 @@ SECTIONS
 		. = . + 4K;
 	}
 
+	.print_mmap : ALIGN (4K)
+    {
+		pmm_table = .;
+		. = . + (2M);
+		pmm_table_size = . - pmm_table;
+	}
+
+    PROVIDE(tables_top = .);
 
     /* set up the kernel stack */
     . = 0xC1000000;
 
 	.stack : ALIGN(4K)
 	{
-		kernel_stack_base = .;
+		kernel_stack = .;
 		*(.stack)
 		kernel_stack_top = . + 16K;
+	}
+
+    . = kernel_stack_top;
+
+    .reserved_end = .;
+
+    .heap : ALIGN(4K)
+	{
+		heap = .;
 	}
 }

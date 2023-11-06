@@ -12,6 +12,21 @@ union Page_Table_Entry *page_tables;
 union Page_Directory_Entry *page_directory;
 
 
+//size_t* kernel_physical_base = (size_t *) 0x00100000;
+
+/*
+void init_paging_addresses(size_t *mem_top)
+{
+    page_tables = (union Page_Table_Entry *) ((size_t) kernel_physical_base + kernel_size);
+    page_directory = (union Page_Directory_Entry *) ((size_t) page_tables + page_table_size);
+    kernel_stack_physical_base = (size_t *) ((size_t) page_directory + page_directory_size);
+    tables_physical_base = (size_t *) ((size_t) page_directory + 0x00400000);
+    heap_physical_base = (size_t *) ((size_t) tables_physical_base + tables_size);
+    heap_size = (size_t) mem_top - (size_t) heap_physical_base;
+}
+ */
+
+
 void set_page_directory_entry(uint32_t index,
                               size_t pt_entry,
                               bool rw, bool user,
@@ -21,7 +36,7 @@ void set_page_directory_entry(uint32_t index,
     if (index > PD_ENTRY_COUNT)
     {
         kprintf("Invalid directory entry index: %x\n", index);
-        panic();
+        panic("Invalid directory entry index");
     }
 
     size_t pte_address = (size_t) &page_tables[pt_entry + (index * PT_ENTRY_COUNT)];
@@ -61,13 +76,13 @@ void set_page_table_entry(uint32_t de,
     if (de > PD_ENTRY_COUNT)
     {
         kprintf("Invalid directory entry: %x\n", de);
-        panic();
+        panic("Invalid directory entry");
     }
 
     if (index > (PT_ENTRY_COUNT * PD_ENTRY_COUNT))
     {
         kprintf("Invalid table entry index: %x\n", index);
-        panic();
+        panic("Invalid table entry index");
     }
 
     // first, clear the directory entry
@@ -86,6 +101,9 @@ void set_page_table_entry(uint32_t de,
     page_tables[index].fields.global = false;
     page_tables[index].fields.available = 0;
     page_tables[index].fields.address = address_field;
+
+    // set matching PM map table entry
+    set_pmm_entry(address / PAGE_SPAN);
 }
 
 struct Page_Directory_Frame
@@ -130,25 +148,25 @@ void set_page_block(uint32_t phys_address,
     if (frame.dir_start > PD_ENTRY_COUNT)
     {
         kprintf("Invalid directory start: %x\n", frame.dir_start);
-        panic();
+        panic("Invalid directory start");
     }
 
     if (frame.dir_end > PD_ENTRY_COUNT)
     {
         kprintf("Invalid directory endpoint: %x\n", frame.dir_end);
-        panic();
+        panic("Invalid directory endpoint");
     }
 
     if (frame.page_start > PT_ENTRY_COUNT)
     {
         kprintf("Invalid page table entry start: %x\n", frame.page_start);
-        panic();
+        panic("Invalid page table entry start");
     }
 
     if (frame.page_end > PT_ENTRY_COUNT)
     {
         kprintf("Invalid page table entry endpoint: %x\n", frame.page_end);
-        panic();
+        panic("Invalid page table entry endpoint");
     }
 
     // initialize the iteration variables here rather than in the for statement,
@@ -173,7 +191,7 @@ void set_page_block(uint32_t phys_address,
         if (pt_current_end > PT_ENTRY_COUNT)
         {
             kprintf("Invalid local page table entry endpoint: %x\n", pt_current_end);
-            panic();
+            panic("Invalid local page table entry endpoint");
         }
 
         //kprintf("Mapping PD entry %x to physical address: %p\n", pd_entry, addr);
@@ -198,19 +216,25 @@ void set_page_block(uint32_t phys_address,
     }
 }
 
-
-void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MAX_MEMTABLE_SIZE])
+size_t *reset_default_paging(uint8_t *mem_start, uint8_t *mem_top)
 {
     size_t* kernel_physical_base = (size_t *) 0x00100000;
     size_t kernel_size = 0x00300000;                             // 3 MiB
     page_tables = (union Page_Table_Entry *) ((size_t) kernel_physical_base + kernel_size);
-    size_t page_table_size = 0x01000000;                         // 16 MiB
-    page_directory = (union Page_Directory_Entry *) ((size_t) page_tables + page_table_size);
+    size_t page_tables_size = 0x01000000;                         // 16 MiB
+    page_directory = (union Page_Directory_Entry *) ((size_t) page_tables + page_tables_size);
     size_t page_directory_size = 0x000001000;                    // 4 KiB
     size_t* kernel_stack_physical_base = (size_t *) ((size_t) page_directory + page_directory_size);
     size_t kernel_stack_size = 0x00004000;                       // 16 KiB
     size_t* tables_physical_base = (size_t *) ((size_t) page_directory + 0x00400000);
     size_t tables_size = 0x00400000;                             // 4 MiB
+    size_t* heap_physical_base = (size_t *) ((size_t) tables_physical_base + tables_size);
+    size_t heap_size = (size_t) mem_top - (size_t) heap_physical_base;
+
+    kprintf("page tables @%p, %u bytes\n", page_tables, page_tables_size);
+    kprintf("page directory @%p, %u bytes\n", page_directory, page_directory_size);
+    kprintf("Tables @%p phys, @%p va, %u bytes, top @%p\n", tables_physical_base, &tables_base, tables_size, &tables_top);
+    kprintf("Stack @%p phys, @%p va, %u bytes, top @%p\n", kernel_stack_physical_base, &kernel_stack, kernel_stack_size, &kernel_stack_top);
 
 
     // identity map the first 1MiB
@@ -221,11 +245,15 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
 
     // identity map the section for the page directory and page tables
     // these need to have physical addresses, not virtual ones
-    set_page_block((size_t) page_tables, (size_t) page_tables, page_table_size,  true, false, false, false);
+    set_page_block((size_t) page_tables, (size_t) page_tables, page_tables_size,  true, false, false, false);
     set_page_block((size_t) page_directory, (size_t) page_directory, page_directory_size, true, false, false, false);
 
     // identity map the stack
     set_page_block((size_t) kernel_stack_physical_base, (size_t) kernel_stack_physical_base, kernel_stack_size, true, false, false, false);
+
+    // identity map the free heap
+    set_page_block((size_t) heap_physical_base, (size_t) heap_physical_base, heap_size, true, false, false, false);
+
 
     // map in the kernel region
     set_page_block((size_t) kernel_physical_base, (size_t) &kernel_base, kernel_size, true, false, false, false);
@@ -235,10 +263,9 @@ void reset_default_paging(uint32_t map_size, struct memory_map_entry mt[KDATA_MA
     set_page_block((size_t) tables_physical_base, (size_t) &tables_base, tables_size, true, false, false, false);
 
     // map in the stack
-    set_page_block((size_t) kernel_stack_physical_base, (size_t) &kernel_stack_base, kernel_stack_size, true, false, false, false);
+    set_page_block((size_t) kernel_stack_physical_base, (size_t) &kernel_stack, kernel_stack_size, true, false, false, false);
 
-
-    kprintf("Resetting paging... ");
     page_reset();
-    kprintf("Paging reset\n");
+
+    return heap_physical_base;
 }
