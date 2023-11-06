@@ -92,7 +92,7 @@ void set_page_table_entry(uint32_t de, uint32_t te, size_t address, bool rw, boo
 
 void set_page_block(uint32_t phys_address, uint32_t virt_address, uint32_t block_size, bool rw, bool user, bool write_thru, bool no_caching);
 
-void reset_default_paging(uint8_t *mem_start, uint8_t *mem_top);
+size_t * reset_default_paging(uint8_t *mem_start, uint8_t *mem_top);
 
 
 inline static void page_reset()

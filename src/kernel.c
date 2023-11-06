@@ -62,9 +62,9 @@ void kernel_main()
     init_default_interrupts();
     enable_interrupts();
 
-    reset_default_paging(mem_start, mem_top);
+    size_t *heap_start = reset_default_paging(mem_start, mem_top);
 
-    size_t pg_count = init_heap(mem_start, mem_top);
+    size_t pg_count = init_heap((struct Free_List_Entry *) heap_start, mem_top);
     kprintf("Pages initialized: %u\n", pg_count);
 
     init_acpi();

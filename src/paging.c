@@ -216,7 +216,7 @@ void set_page_block(uint32_t phys_address,
     }
 }
 
-void reset_default_paging(uint8_t *mem_start, uint8_t *mem_top)
+size_t *reset_default_paging(uint8_t *mem_start, uint8_t *mem_top)
 {
     size_t* kernel_physical_base = (size_t *) 0x00100000;
     size_t kernel_size = 0x00300000;                             // 3 MiB
@@ -228,12 +228,14 @@ void reset_default_paging(uint8_t *mem_start, uint8_t *mem_top)
     size_t kernel_stack_size = 0x00004000;                       // 16 KiB
     size_t* tables_physical_base = (size_t *) ((size_t) page_directory + 0x00400000);
     size_t tables_size = 0x00400000;                             // 4 MiB
-    size_t heap_size = (size_t) mem_top - (size_t) mem_start;
+    size_t* heap_physical_base = (size_t *) ((size_t) tables_physical_base + tables_size);
+    size_t heap_size = (size_t) mem_top - (size_t) heap_physical_base;
 
     kprintf("page tables @%p, %u bytes\n", page_tables, page_tables_size);
     kprintf("page directory @%p, %u bytes\n", page_directory, page_directory_size);
     kprintf("Tables @%p phys, @%p va, %u bytes, top @%p\n", tables_physical_base, &tables_base, tables_size, &tables_top);
     kprintf("Stack @%p phys, @%p va, %u bytes, top @%p\n", kernel_stack_physical_base, &kernel_stack, kernel_stack_size, &kernel_stack_top);
+
 
     // identity map the first 1MiB
     set_page_block(0, 0, 0x00100000, true, false, false, false);
@@ -264,4 +266,6 @@ void reset_default_paging(uint8_t *mem_start, uint8_t *mem_top)
     set_page_block((size_t) kernel_stack_physical_base, (size_t) &kernel_stack, kernel_stack_size, true, false, false, false);
 
     page_reset();
+
+    return heap_physical_base;
 }

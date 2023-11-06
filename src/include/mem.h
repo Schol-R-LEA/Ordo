@@ -130,7 +130,7 @@ void* memcpy(void *destination, void *source, size_t num);
 void memdump(void* src, uint32_t size);
 
 void init_physical_memory_map(uint32_t count, struct boot_memory_map_entry table[]);
-size_t init_heap(uint8_t* mem_start, uint8_t* mem_top);
+size_t init_heap(struct Free_List_Entry * heap_start, uint8_t* mem_top);
 
 void kfree(void* start);
 void* kmalloc(size_t size);
