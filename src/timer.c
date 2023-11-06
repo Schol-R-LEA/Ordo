@@ -14,7 +14,7 @@ void init_timer()
 
 }
 
-void diasble_timer()
+void disable_timer()
 {
 
 }

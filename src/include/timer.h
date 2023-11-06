@@ -5,7 +5,7 @@
 
 void disable_legacy_timer();
 void init_timer();
-void diasble_timer();
+void disable_timer();
 void enable_timer();
 bool timer_enabled();
 
