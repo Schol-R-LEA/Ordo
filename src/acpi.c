@@ -42,8 +42,7 @@ struct RSDP_Extended_Descriptor* scan_rsdp_signature()
 
     if(!found)
     {
-        kprints("Error: RSDP not found", WHITE, BLACK);
-        panic();
+        panic("Error: RSDP not found");
     }
     return NULL;
 }
@@ -124,11 +123,9 @@ void init_acpi()
     }
     kprintc('\n', GRAY, BLACK);
 
-
     if (!validate_rsdp_checksum(rsdp))
     {
-        kprints("Error: invalid RSDP", LT_RED, BLACK);
-        panic();
+        panic("Error: invalid RSDP");
     }
 
 
@@ -164,8 +161,7 @@ void init_acpi()
 
     if (!validate_sdt_checksum(sdt))
     {
-        kprints("Error: invalid SDT", LT_RED, BLACK);
-        panic();
+        panic("Error: invalid SDT");
     }
     kprintf("SDT checksum valid.\n");
 
