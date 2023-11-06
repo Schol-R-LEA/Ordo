@@ -252,7 +252,7 @@ size_t *reset_default_paging(uint8_t *mem_start, uint8_t *mem_top)
     set_page_block((size_t) kernel_stack_physical_base, (size_t) kernel_stack_physical_base, kernel_stack_size, true, false, false, false);
 
     // identity map the free heap
-    set_page_block((size_t) mem_start, (size_t) mem_start, heap_size, true, false, false, false);
+    set_page_block((size_t) heap_physical_base, (size_t) heap_physical_base, heap_size, true, false, false, false);
 
 
     // map in the kernel region
