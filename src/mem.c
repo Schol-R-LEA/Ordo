@@ -235,50 +235,49 @@ void init_physical_memory_map(uint32_t count, struct boot_memory_map_entry table
 
 
 
-size_t init_heap(struct Free_List_Entry * heap_start, uint8_t* mem_top)
+void init_heap(struct Free_List_Entry *heap_start, uint8_t* mem_top)
 {
     spinlock_init(&heap_memory.lock);
     heap_memory.start = (struct Free_List_Entry *) page_round_up(heap_start);
-    heap_memory.top = (struct Free_List_Entry *) page_round_down (mem_top);
+    heap_memory.top = (struct Free_List_Entry *) page_round_down (mem_top - (PAGE_SIZE + (23 * MBYTE)));
     heap_memory.size = (size_t) heap_memory.top - (size_t) heap_memory.start;
     heap_memory.free_list = (struct Free_List_Entry *) page_round_up(heap_memory.start);
 
-    kprintf("heap start: %p, heap size: %d MiB\n", heap_memory.start, heap_memory.size / MBYTE);
+    kprintf("heap start: %p, heap end: %p, heap size: %d Bytes\n", heap_memory.start, heap_memory.top, heap_memory.size);
     kprintf("expected # of pages: %d \n", heap_memory.size / PAGE_SIZE);
 
-    size_t page_count = 0;
-    for (struct Free_List_Entry* block = heap_memory.free_list;
-         // block < heap_memory.top;
-         //page_count < 19679;
-         page_count < 52447;
-         //page_count < 117983;
-         block++)
+    kprintf("Page ");
+
+    for (struct Free_List_Entry *block = heap_memory.free_list; block <= heap_memory.top; block++)
     {
+        uint16_t x = get_x();
+        uint16_t y = get_y();
+        kprintf("%u", (block - heap_memory.start));
+        gotoxy(x, y);
         kfree(block);
-        page_count++;
     }
 
-    return page_count;
+    kprintf("\n");
 }
 
 void kfree(void* start)
 {
     spinlock_acquire(&heap_memory.lock);
 
-    if (!(is_page_aligned(start) && addr_in_range(start, heap_memory.start, heap_memory.top)))
+    if (!(is_page_aligned(start)))
     {
-        kprintf("%p: ", start);
+        kprintf("\n%p: ", start);
         panic("Unaligned page address");
     }
-    if ((size_t) start < (size_t) heap_memory.start)
+    if ((struct Free_List_Entry *) start < heap_memory.start)
     {
-        kprintf("%p: ", start);
+        kprintf("\n%p < %p: ", start, heap_memory.start);
         panic("Page address too low");
     }
-    if ((size_t) start > (size_t) (heap_memory.top - sizeof(struct Free_List_Entry)))
+    if ((struct Free_List_Entry *) start > heap_memory.top)
     {
-        kprintf("%p > %p: ", start, heap_memory.top);
-        panic("Page address out of range");
+        kprintf("\n%p > %p: ", start, heap_memory.top);
+        panic("Page address too high");
     }
     else
     {
